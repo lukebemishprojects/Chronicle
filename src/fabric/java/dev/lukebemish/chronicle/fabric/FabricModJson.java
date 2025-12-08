@@ -3,11 +3,16 @@ package dev.lukebemish.chronicle.fabric;
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
+import dev.lukebemish.chronicle.core.GenericChronicleList;
+import dev.lukebemish.chronicle.core.GenericChronicleMap;
+import dev.lukebemish.chronicle.core.MapView;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class FabricModJson extends ChronicleMap {
     public FabricModJson(BackendMap backend) {
@@ -20,6 +25,9 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setId(String id) {
+        if (MOD_ID.asMatchPredicate().test(id)) {
+            throw new IllegalStateException("Mod ID '" + id + "' is invalid; it must match the regex " + MOD_ID.pattern());
+        }
         set("id", id);
     }
 
@@ -36,26 +44,11 @@ public class FabricModJson extends ChronicleMap {
         if (env == null) {
             return null;
         }
-        for (Environment environment : Environment.values()) {
-            if (environment.value.equals(env)) {
-                return environment;
-            }
-        }
-        throw new IllegalStateException("Unknown environment: " + env);
+        return Environment.forValue(env);
     }
 
     public void setEnvironment(@Nullable Environment environment) {
-        backend().set("environment", environment instanceof Environment e ? e.value : null);
-    }
-
-    public enum Environment {
-        ANY("*"), CLIENT("client"), SERVER("server");
-
-        private final String value;
-
-        Environment(String value) {
-            this.value = value;
-        }
+        backend().set("environment", environment instanceof Environment e ? e.getValue() : null);
     }
 
     public @Nullable String getName() {
@@ -74,11 +67,134 @@ public class FabricModJson extends ChronicleMap {
         backend().set("description", description);
     }
 
+    @SuppressWarnings("DataFlowIssue")
+    public @Nullable String getLicense() {
+        var val = get("license");
+        return switch (val) {
+            case GenericChronicleList list when list.size() == 1 -> (String) list.get(0);
+            case null -> null;
+            default -> (String) val;
+        };
+    }
+
+    public @Nullable GenericChronicleList getLicenses() {
+        var val = get("license");
+        return switch (val) {
+            case String string -> {
+                backend().set("license", List.of(string));
+                yield (GenericChronicleList) backend().get("license");
+            }
+            case null -> null;
+            default -> (GenericChronicleList) val;
+        };
+    }
+
+    public void setLicense(@Nullable Object license) {
+        backend().set("license", license);
+    }
+
+    public void setLicenses(@Nullable List<String> licenses) {
+        backend().set("license", licenses);
+    }
+
+    public void license(String value) {
+        var licenses = getLicenses();
+        if (licenses == null) {
+            setLicenses(List.of(value));
+        } else {
+            licenses.add(value);
+        }
+    }
+
+    public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {
+        backend().configure("contact", action, ContactInformation::new);
+    }
+
+    public void authors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
+        backend().configureList("authors", action, People::new);
+    }
+
+    public void contributors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
+        backend().configureList("contributors", action, People::new);
+    }
+
+    public void icon(String path) {
+        backend().set("icon", path);
+    }
+
+    public void icons(@DelegatesTo(value = Icons.class, strategy = Closure.DELEGATE_FIRST) Action<Icons> action) {
+        backend().configure("icon", action, Icons.VIEW);
+    }
+
     public void jars(@DelegatesTo(value = NestedJarEntries.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntries> action) {
         backend().configureList("jars", action, NestedJarEntries::new);
     }
 
-    public void entrypoints(@DelegatesTo(value = EntrypointContainer.class, strategy = Closure.DELEGATE_FIRST) Action<EntrypointContainer> action) {
-        backend().configure("entrypoints", action, EntrypointContainer::new);
+    public void entrypoints(@DelegatesTo(value = Entrypoints.class, strategy = Closure.DELEGATE_FIRST) Action<Entrypoints> action) {
+        backend().configure("entrypoints", action, Entrypoints::new);
     }
+
+    public void languageAdapters(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
+        backend().configure("languageAdapters", action, GenericChronicleMap::new);
+    }
+
+    public GenericChronicleMap getLanguageAdapters() {
+        backend().configure("languageAdapters", e -> {}, GenericChronicleMap::new);
+        return (GenericChronicleMap) Objects.requireNonNull(get("languageAdapters"));
+    }
+
+    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
+        backend().configureList("mixins", action, Mixins::new);
+    }
+
+    public @Nullable String getAccessWidener() {
+        return (String) get("accessWidener");
+    }
+
+    public void setAccessWidener(@Nullable String accessWidener) {
+        backend().set("accessWidener", accessWidener);
+    }
+
+    public void depends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
+        backend().configure("depends", action, Dependencies::new);
+    }
+
+    public void recommends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
+        backend().configure("recommends", action, Dependencies::new);
+    }
+
+    public void suggests(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
+        backend().configure("suggests", action, Dependencies::new);
+    }
+
+    public void conflicts(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
+        backend().configure("conflicts", action, Dependencies::new);
+    }
+
+    public void breaks(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
+        backend().configure("breaks", action, Dependencies::new);
+    }
+
+    public void custom(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
+        backend().configure("custom", action, GenericChronicleMap::new);
+    }
+
+    public static final MapView<FabricModJson> VIEW = new MapView<>() {
+        @Override
+        public FabricModJson wrap(BackendMap map) {
+            return new FabricModJson(map);
+        }
+
+        @Override
+        public void validate(BackendMap map) {
+            if (!(map.get("id") instanceof String string)) {
+                throw new IllegalStateException("Expected 'id' to be present and a String");
+            }
+            if (!(map.get("version") instanceof String)) {
+                throw new IllegalStateException("Expected 'version' to be present and a String");
+            }
+        }
+    };
+
+    static final Pattern MOD_ID = Pattern.compile("^[a-z][a-z0-9-_]{1,63}");
 }

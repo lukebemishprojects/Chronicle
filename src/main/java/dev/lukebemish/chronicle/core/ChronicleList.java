@@ -7,7 +7,7 @@ import java.util.Map;
 public abstract class ChronicleList implements Iterable<Object> {
     final BackendList backend;
 
-    protected ChronicleList(BackendList backend) {
+    public ChronicleList(BackendList backend) {
         this.backend = backend;
     }
 

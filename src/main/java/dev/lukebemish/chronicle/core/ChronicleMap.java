@@ -1,6 +1,5 @@
 package dev.lukebemish.chronicle.core;
 
-import groovy.lang.Closure;
 import kotlin.jvm.JvmName;
 import org.jspecify.annotations.Nullable;
 
@@ -11,7 +10,7 @@ import java.util.Map;
 public abstract class ChronicleMap implements Iterable<ChronicleMap.Entry> {
     final BackendMap backend;
 
-    protected ChronicleMap(BackendMap backend) {
+    public ChronicleMap(BackendMap backend) {
         this.backend = backend;
     }
 

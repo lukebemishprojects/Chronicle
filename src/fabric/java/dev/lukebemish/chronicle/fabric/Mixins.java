@@ -6,12 +6,12 @@ import dev.lukebemish.chronicle.core.ChronicleList;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public class NestedJarEntries extends ChronicleList {
-    public NestedJarEntries(BackendList backend) {
+public class Mixins extends ChronicleList {
+    public Mixins(BackendList backend) {
         super(backend);
     }
 
-    public void jar(@DelegatesTo(value = NestedJarEntry.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntry> action) {
-        backend().add(action, NestedJarEntry.VIEW);
+    public void add(@DelegatesTo(value = Mixin.class, strategy = Closure.DELEGATE_FIRST) Action<Mixin> action) {
+        this.backend().add(action, Mixin.VIEW);
     }
 }

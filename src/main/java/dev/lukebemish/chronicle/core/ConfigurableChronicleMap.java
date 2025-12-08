@@ -1,7 +1,7 @@
 package dev.lukebemish.chronicle.core;
 
 public abstract class ConfigurableChronicleMap<T> extends ChronicleMap {
-    protected ConfigurableChronicleMap(BackendMap backend) {
+    public ConfigurableChronicleMap(BackendMap backend) {
         super(backend);
     }
 
@@ -27,9 +27,9 @@ public abstract class ConfigurableChronicleMap<T> extends ChronicleMap {
     // Groovy compatibility
 
     @SuppressWarnings("unchecked")
-    public void methodMissing(String name, Object args) {
+    protected boolean methodMissingImpl(String name, Object args) {
         if (args instanceof Object[] argsArray && argsArray.length == 1) {
-            Action<T> action = null;
+            Action<T> action;
             if (argsArray[0] instanceof Action<?> instance) {
                 action = (Action<T>) instance;
             } else {
@@ -37,8 +37,15 @@ public abstract class ConfigurableChronicleMap<T> extends ChronicleMap {
             }
             if (action != null) {
                 this.configure(name, action);
-                return;
+                return true;
             }
+        }
+        return false;
+    }
+
+    public void methodMissing(String name, Object args) {
+        if (methodMissingImpl(name, args)) {
+            return;
         }
         throw new UnsupportedOperationException("Method " + name + " with arguments " + args + " is not supported.");
     }

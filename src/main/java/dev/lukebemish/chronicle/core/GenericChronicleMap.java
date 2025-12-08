@@ -3,7 +3,7 @@ package dev.lukebemish.chronicle.core;
 import groovy.lang.DelegatesTo;
 
 public class GenericChronicleMap extends ConfigurableChronicleMap<GenericChronicleMap> {
-    protected GenericChronicleMap(BackendMap backend) {
+    public GenericChronicleMap(BackendMap backend) {
         super(backend);
     }
 

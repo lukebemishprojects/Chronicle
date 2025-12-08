@@ -30,6 +30,7 @@ dependencies {
 
     fabricApi(project(":"))
     fabricCompileOnly("org.apache.groovy:groovy:4.0.28")
+    fabricCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
 }
 
 kotlin {

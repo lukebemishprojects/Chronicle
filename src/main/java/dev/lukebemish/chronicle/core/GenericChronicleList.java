@@ -4,7 +4,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
 public class GenericChronicleList extends ChronicleList {
-    protected GenericChronicleList(BackendList backend) {
+    public GenericChronicleList(BackendList backend) {
         super(backend);
     }
 
