@@ -3,7 +3,7 @@
 package dev.lukebemish.chronicle.core
 
 class ValueKind<T> private constructor(private val cast: (Any?) -> T, private val create: (() -> T)? = null) {
-    fun check(value: Any?): T {
+    internal fun check(value: Any?): T {
         return if (value == null && create != null) {
             create()
         } else {
@@ -26,8 +26,8 @@ class ValueKind<T> private constructor(private val cast: (Any?) -> T, private va
     }
 }
 
-inline operator fun <reified T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key))
-inline operator fun <reified T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index))!!
+operator fun <T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key))
+operator fun <T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index))!!
 
 context(outer: ConfigurableChronicleMap<T>)
 operator fun <T: Any> String.invoke(action: Action<T>) {
