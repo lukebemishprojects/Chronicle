@@ -2,18 +2,32 @@
 
 package dev.lukebemish.chronicle.core
 
-class ValueKind<T> private constructor() {
+class ValueKind<T> private constructor(private val cast: (Any?) -> T, private val create: (() -> T)? = null) {
+    fun check(value: Any?): T {
+        return if (value == null && create != null) {
+            create()
+        } else {
+            cast(value)
+        }
+    }
+
     companion object {
-        val STRING = ValueKind<String>()
-        val NUMBER = ValueKind<Number>()
-        val BOOLEAN = ValueKind<Boolean>()
-        val MAP = ValueKind<GenericChronicleMap>()
-        val LIST = ValueKind<GenericChronicleList>()
+        val STRING = ValueKind<String?>({ it as String? })
+        val NUMBER = ValueKind<Number?>({ it as Number? })
+        val BOOLEAN = ValueKind<Boolean?>({ it as Boolean? })
+        val MAP = ValueKind<GenericChronicleMap?>({ it as GenericChronicleMap? })
+        val LIST = ValueKind<GenericChronicleList?>({ it as GenericChronicleList? })
+        val CREATE_MAP = ValueKind<GenericChronicleMap>({ it as GenericChronicleMap }, {
+            GenericChronicleMap(BackendMap())
+        })
+        val CREATE_LIST = ValueKind<GenericChronicleList>({ it as GenericChronicleList }, {
+            GenericChronicleList(BackendList())
+        })
     }
 }
 
-inline operator fun <reified T> ChronicleMap.get(key: String, type: ValueKind<T>): T? = get(key) as T?
-inline operator fun <reified T> ChronicleList.get(index: Int, type: ValueKind<T>): T = get(index) as T
+inline operator fun <reified T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key))
+inline operator fun <reified T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index))!!
 
 context(outer: ConfigurableChronicleMap<T>)
 operator fun <T: Any> String.invoke(action: Action<T>) {
