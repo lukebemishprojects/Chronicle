@@ -20,22 +20,16 @@ java {
         withSourcesJar()
         withJavadocJar()
     }
-    registerFeature("postProcessor") {
-        usingSourceSet(sourceSets.create("postProcessor"))
-        disablePublication()
-    }
 }
 
 dependencies {
     compileOnlyApi("org.jetbrains:annotations:26.0.2")
     compileOnlyApi("org.jspecify:jspecify:1.0.0")
-    compileOnlyApi("org.apache.groovy:groovy:4.0.28")
+    compileOnly("org.apache.groovy:groovy:4.0.28")
     compileOnly(gradleApi())
 
     fabricApi(project(":"))
-
-    postProcessorImplementation("dev.lukebemish:javac-post-processor:0.1.3")
-    postProcessorImplementation 'org.ow2.asm:asm-tree:9.8'
+    fabricCompileOnly("org.apache.groovy:groovy:4.0.28")
 }
 
 kotlin {
