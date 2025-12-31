@@ -36,24 +36,28 @@ public abstract class ChronicleMap implements Iterable<ChronicleMap.Entry> {
         return backend.size();
     }
 
-    public void set(String key, List<?> value) {
-        backend.set(key, value);
+    public void putAt(String key, List<?> value) {
+        backend.putAt(key, value);
     }
 
-    public void set(String key, Map<?, ?> value) {
-        backend.set(key, value);
+    public void putAt(String key, Map<?, ?> value) {
+        backend.putAt(key, value);
     }
 
-    public void set(String key, String value) {
-        backend.set(key, value);
+    public void putAt(String key, String value) {
+        backend.putAt(key, value);
     }
 
-    public void set(String key, Number value) {
-        backend.set(key, value);
+    public void putAt(String key, Number value) {
+        backend.putAt(key, value);
     }
 
-    public void set(String key, boolean value) {
-        backend.set(key, value);
+    public void putAt(String key, boolean value) {
+        backend.putAt(key, value);
+    }
+
+    public void propertyMissing(String key, Object value) {
+        backend.putAt(key, value);
     }
 
     @Override

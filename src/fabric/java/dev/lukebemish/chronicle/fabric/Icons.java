@@ -9,8 +9,8 @@ public class Icons extends ChronicleMap {
         super(backend);
     }
 
-    public void set(int size, String path) {
-        backend().set(String.valueOf(size), path);
+    public void putAt(int size, String path) {
+        backend().putAt(String.valueOf(size), path);
     }
 
     @DslValidate

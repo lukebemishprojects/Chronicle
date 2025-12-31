@@ -1,5 +1,6 @@
 package dev.lukebemish.chronicle.generator;
 
+import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendList;
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleDsl;
@@ -691,6 +692,17 @@ public class DslCreator {
                     newSignature.toString(),
                     null
                 );
+                for (int i = 0; i < member.parameterTypes.size(); i++) {
+                    var parsedType = member.parameterTypes.get(i);
+                    if (parsedType instanceof ParsedType.Parameterized(var name, var typeArguments) && name.equals(Type.getInternalName(Action.class)) && typeArguments.size() == 1 && typeArguments.getFirst().replace(implMap) instanceof ParsedType.Simple(var simpleDescriptor)) {
+                        var annotationVisitor = methodNode.visitParameterAnnotation(
+                            i, "Lgroovy/lang/DelegatesTo;", true
+                        );
+                        annotationVisitor.visit("value", Type.getType(simpleDescriptor));
+                        annotationVisitor.visit("strategy", 1); // Closure.DELEGATE_FIRST
+                        annotationVisitor.visitEnd();
+                    }
+                }
                 methodNode.visitCode();
                 methodNode.visitVarInsn(Opcodes.ALOAD, 0);
                 var newMethodType = Type.getMethodType(newDescriptor.toString());
@@ -777,9 +789,9 @@ public class DslCreator {
         }
 
         var requiredPlugins = new LinkedHashSet<String>();
-        var requiredDslSearch = new LinkedHashSet<String>(mixinClassNames);
-        for (var entrypoint : entrypoints) {
-            var referenced = referencesToTransitively.get(entrypoint);
+        var requiredDslSearch = new LinkedHashSet<String>();
+        for (var target : targets) {
+            var referenced = referencesToTransitively.get(target);
             if (referenced != null) {
                 requiredDslSearch.addAll(referenced);
             }
@@ -883,9 +895,6 @@ public class DslCreator {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-
-        // TODO: generate plugin class w/ mappings, collect existing plugins, etc.
-        // TODO: handle validators
     }
 
     private static SequencedMap<String, SequencedSet<String>> makeTransitive(SequencedMap<String, SequencedSet<String>> original) {

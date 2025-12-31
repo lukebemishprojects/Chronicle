@@ -10,10 +10,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -220,36 +224,70 @@ public final class ChronicleEngine<T> {
                 ctorHandle,
                 MethodType.methodType(clazz, backendType)
             ).dynamicInvoker().invoke();
-            MethodHandle validatorHandle = null;
-            for (var method : clazz.getMethods()) {
-                if (method.isAnnotationPresent(DslValidate.class)) {
-                    if (validatorHandle != null) {
-                        throw new IllegalStateException("Multiple @DslValidate methods found in " + clazz);
-                    }
-                    if (method.getParameterCount() == 1 &&
-                        method.getReturnType() == void.class &&
-                        method.getParameterTypes()[0] == backendType
-                    ) {
-                        if (Modifier.isStatic(method.getModifiers())) {
-                            validatorHandle = MethodHandles.lookup().unreflect(method);
+            List<MethodHandle> validatorHandles = new ArrayList<>();
+            var searched = new LinkedHashSet<Class<?>>();
+            var queueToSearch = new ArrayDeque<Class<?>>();
+            queueToSearch.add(clazz);
+            while (!queueToSearch.isEmpty()) {
+                var current = queueToSearch.removeFirst();
+                if (!searched.add(current)) {
+                    continue;
+                }
+                var parent = current.getSuperclass();
+                if (parent != null && parent != Object.class) {
+                    queueToSearch.add(parent);
+                }
+                queueToSearch.addAll(Arrays.asList(current.getInterfaces()));
+            }
+            for (var declClazz : searched) {
+                for (var method : declClazz.getDeclaredMethods()) {
+                    if (method.isAnnotationPresent(DslValidate.class)) {
+                        if (method.getParameterCount() == 1 &&
+                            method.getReturnType() == void.class &&
+                            method.getParameterTypes()[0] == backendType
+                        ) {
+                            if (Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers())) {
+                                validatorHandles.add(MethodHandles.lookup().unreflect(method));
+                            } else {
+                                throw new IllegalStateException("@DslValidate method must be static: " + method);
+                            }
                         } else {
-                            throw new IllegalStateException("@DslValidate method must be static: " + method);
+                            throw new IllegalStateException("@DslValidate method has invalid signature: " + method);
                         }
-                    } else {
-                        throw new IllegalStateException("@DslValidate method has invalid signature: " + method);
                     }
                 }
             }
             Object validator = null;
-            if (validatorHandle != null) {
-                validator = LambdaMetafactory.metafactory(
-                    MethodHandles.lookup(),
-                    "validate",
-                    MethodType.methodType(validatorType),
-                    MethodType.methodType(void.class, backendType),
-                    validatorHandle,
-                    MethodType.methodType(void.class, backendType)
-                ).dynamicInvoker().invoke();
+            if (!validatorHandles.isEmpty()) {
+                var validators = validatorHandles.stream()
+                    .map(validatorHandle -> {
+                        try {
+                            return LambdaMetafactory.metafactory(
+                                MethodHandles.lookup(),
+                                "validate",
+                                MethodType.methodType(validatorType),
+                                MethodType.methodType(void.class, backendType),
+                                validatorHandle,
+                                MethodType.methodType(void.class, backendType)
+                            ).dynamicInvoker().invoke();
+                        } catch (Throwable e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+                if (backendType == BackendMap.class) {
+                    validator = (MapViewImpl.Validator) map -> {
+                        for (var v : validators) {
+                            ((MapViewImpl.Validator) v).validate(map);
+                        }
+                    };
+                } else {
+                    validator = (ListViewImpl.Validator) list -> {
+                        for (var v : validators) {
+                            ((ListViewImpl.Validator) v).validate(list);
+                        }
+                    };
+                }
             }
             if (backendType == BackendMap.class) {
                 @SuppressWarnings({"rawtypes", "unchecked"})

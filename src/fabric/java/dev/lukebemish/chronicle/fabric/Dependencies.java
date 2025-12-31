@@ -20,12 +20,12 @@ public class Dependencies extends ChronicleMap {
 
     public void mod(String key, String value) {
         validateId(key);
-        backend().set(key, value);
+        backend().putAt(key, value);
     }
 
     public void mod(String key, List<String> value) {
         validateId(key);
-        backend().set(key, value);
+        backend().putAt(key, value);
     }
 
     private void validateId(String id) {

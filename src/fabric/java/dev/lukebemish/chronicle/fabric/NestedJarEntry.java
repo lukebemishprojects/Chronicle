@@ -16,7 +16,7 @@ public class NestedJarEntry extends ChronicleMap {
     }
 
     public void setFile(String file) {
-        set("file", file);
+        putAt("file", file);
     }
 
     @DslValidate

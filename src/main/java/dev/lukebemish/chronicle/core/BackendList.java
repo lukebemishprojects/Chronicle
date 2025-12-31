@@ -61,7 +61,7 @@ public final class BackendList implements Iterable<Object> {
         return context.wrap(values.get(i));
     }
 
-    public void set(int i, Object value) {
+    public void putAt(int i, Object value) {
         values.set(i, Utils.backendify(value, context));
     }
 

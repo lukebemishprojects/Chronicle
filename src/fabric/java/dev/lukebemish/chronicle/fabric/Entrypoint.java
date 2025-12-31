@@ -17,7 +17,7 @@ public class Entrypoint extends ChronicleMap {
     }
 
     public void setAdapter(@Nullable String adapter) {
-        backend().set("adapter", adapter);
+        backend().putAt("adapter", adapter);
     }
 
     public String getValue() {
@@ -25,7 +25,7 @@ public class Entrypoint extends ChronicleMap {
     }
 
     public void setValue(String value) {
-        backend().set("value", value);
+        backend().putAt("value", value);
     }
 
     @DslValidate

@@ -34,7 +34,7 @@ final class Utils {
             case Map<?, ?> map -> {
                 BackendMap backendMap = new BackendMap(context);
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    backendMap.set(entry.getKey().toString(), backendify(entry.getValue(), context));
+                    backendMap.putAt(entry.getKey().toString(), backendify(entry.getValue(), context));
                 }
                 yield backendMap;
             }

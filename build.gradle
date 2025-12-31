@@ -135,6 +135,7 @@ dependencies {
         }
     }
     testGeneratorUsageImplementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+    testGeneratorUsageImplementation("org.apache.groovy:groovy:4.0.28")
 }
 
 kotlin {

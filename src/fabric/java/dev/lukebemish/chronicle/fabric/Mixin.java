@@ -17,7 +17,7 @@ public class Mixin extends ChronicleMap {
     }
 
     public void setConfig(String config) {
-        this.set("config", config);
+        this.putAt("config", config);
     }
 
     public @Nullable Environment getEnvironment() {
@@ -29,7 +29,7 @@ public class Mixin extends ChronicleMap {
     }
 
     public void setEnvironment(@Nullable Environment environment) {
-        backend().set("environment", environment instanceof Environment e ? e.getValue() : null);
+        backend().putAt("environment", environment instanceof Environment e ? e.getValue() : null);
     }
 
     @DslValidate

@@ -14,7 +14,7 @@ public class ContactInformation extends ChronicleMap {
     }
 
     public void setEmail(@Nullable String email) {
-        backend().set("email", email);
+        backend().putAt("email", email);
     }
 
     public @Nullable String getIrc() {
@@ -22,7 +22,7 @@ public class ContactInformation extends ChronicleMap {
     }
 
     public void setIrc(@Nullable String irc) {
-        backend().set("irc", irc);
+        backend().putAt("irc", irc);
     }
 
     public @Nullable String getHomepage() {
@@ -30,7 +30,7 @@ public class ContactInformation extends ChronicleMap {
     }
 
     public void setHomepage(@Nullable String homepage) {
-        backend().set("homepage", homepage);
+        backend().putAt("homepage", homepage);
     }
 
     public @Nullable String getSources() {
@@ -38,7 +38,7 @@ public class ContactInformation extends ChronicleMap {
     }
 
     public void setSources(@Nullable String sources) {
-        backend().set("sources", sources);
+        backend().putAt("sources", sources);
     }
 
     public @Nullable String getIssues() {
@@ -46,6 +46,6 @@ public class ContactInformation extends ChronicleMap {
     }
 
     public void setIssues(@Nullable String issues) {
-        backend().set("issues", issues);
+        backend().putAt("issues", issues);
     }
 }

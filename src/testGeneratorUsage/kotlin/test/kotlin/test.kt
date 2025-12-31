@@ -1,4 +1,6 @@
-import dev.lukebemish.chronicle.core.ChronicleEngine
+package test.kotlin
+
+import dev.lukebemish.chronicle.core.*
 import test.generated.output.test.generator.target.RootImpl
 
 fun main() {

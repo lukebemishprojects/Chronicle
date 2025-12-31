@@ -52,24 +52,24 @@ public abstract class ChronicleList implements Iterable<Object> {
         return backend.get(i);
     }
 
-    public void set(int i, List<?> value) {
-        backend.set(i, value);
+    public void putAt(int i, List<?> value) {
+        backend.putAt(i, value);
     }
 
-    public void set(int i, Map<?, ?> value) {
-        backend.set(i, value);
+    public void putAt(int i, Map<?, ?> value) {
+        backend.putAt(i, value);
     }
 
-    public void set(int i, String value) {
-        backend.set(i, value);
+    public void putAt(int i, String value) {
+        backend.putAt(i, value);
     }
 
-    public void set(int i, Number value) {
-        backend.set(i, value);
+    public void putAt(int i, Number value) {
+        backend.putAt(i, value);
     }
 
-    public void set(int i, boolean value) {
-        backend.set(i, value);
+    public void putAt(int i, boolean value) {
+        backend.putAt(i, value);
     }
 
     @Override

@@ -19,7 +19,7 @@ public class Person extends ChronicleMap {
     }
 
     public void setName(String name) {
-        set("name", name);
+        putAt("name", name);
     }
 
     public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {

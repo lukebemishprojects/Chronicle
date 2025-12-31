@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class FabricModJson extends ChronicleMap {
     public FabricModJson(BackendMap backend) {
         super(backend);
-        backend.set("schemaVersion", 1);
+        backend.putAt("schemaVersion", 1);
     }
 
     public String getId() {
@@ -28,7 +28,7 @@ public class FabricModJson extends ChronicleMap {
         if (!MOD_ID.asMatchPredicate().test(id)) {
             throw new IllegalStateException("Mod ID '" + id + "' is invalid; it must match the regex " + MOD_ID.pattern());
         }
-        set("id", id);
+        putAt("id", id);
     }
 
     public String getVersion() {
@@ -36,7 +36,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setVersion(String version) {
-        set("version", version);
+        putAt("version", version);
     }
 
     public @Nullable Environment getEnvironment() {
@@ -48,7 +48,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setEnvironment(@Nullable Environment environment) {
-        backend().set("environment", environment instanceof Environment e ? e.getValue() : null);
+        backend().putAt("environment", environment instanceof Environment e ? e.getValue() : null);
     }
 
     public @Nullable String getName() {
@@ -56,7 +56,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setName(@Nullable String name) {
-        backend().set("name", name);
+        backend().putAt("name", name);
     }
 
     public @Nullable String getDescription() {
@@ -64,7 +64,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setDescription(@Nullable String description) {
-        backend().set("description", description);
+        backend().putAt("description", description);
     }
 
     @SuppressWarnings("DataFlowIssue")
@@ -81,7 +81,7 @@ public class FabricModJson extends ChronicleMap {
         var val = get("license");
         return switch (val) {
             case String string -> {
-                backend().set("license", List.of(string));
+                backend().putAt("license", List.of(string));
                 yield (GenericChronicleList) backend().get("license");
             }
             case null -> null;
@@ -90,11 +90,11 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setLicense(@Nullable Object license) {
-        backend().set("license", license);
+        backend().putAt("license", license);
     }
 
     public void setLicenses(@Nullable List<String> licenses) {
-        backend().set("license", licenses);
+        backend().putAt("license", licenses);
     }
 
     public void license(String value) {
@@ -119,7 +119,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void icon(String path) {
-        backend().set("icon", path);
+        backend().putAt("icon", path);
     }
 
     public void icons(@DelegatesTo(value = Icons.class, strategy = Closure.DELEGATE_FIRST) Action<Icons> action) {
@@ -152,7 +152,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setAccessWidener(@Nullable String accessWidener) {
-        backend().set("accessWidener", accessWidener);
+        backend().putAt("accessWidener", accessWidener);
     }
 
     public void depends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {

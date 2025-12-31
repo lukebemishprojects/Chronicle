@@ -59,7 +59,7 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
         return backend.size();
     }
 
-    public void set(String key, @Nullable Object value) {
+    public void putAt(String key, @Nullable Object value) {
         if (value == null) {
             backend.remove(key);
         } else {

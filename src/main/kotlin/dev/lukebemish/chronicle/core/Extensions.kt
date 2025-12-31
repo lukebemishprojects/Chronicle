@@ -26,8 +26,8 @@ class ValueKind<T> private constructor(private val cast: (Any?) -> T, private va
     }
 }
 
-operator fun <T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key), backend().context())
-operator fun <T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index), backend().context())!!
+operator fun <T> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key), backend().context())
+operator fun <T> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index), backend().context())!!
 
 context(outer: ConfigurableChronicleMap<T>)
 operator fun <T: Any> String.invoke(action: Action<T>) {
@@ -38,3 +38,18 @@ context(outer: ValueConfigurableChronicleMap<T, R>)
 operator fun <T: Any, R: Any> String.invoke(value: R) {
     outer.configure(this, value)
 }
+
+operator fun ChronicleMap.set(key: String, value: List<*>) = this.putAt(key, value)
+operator fun ChronicleMap.set(key: String, value: Map<*, *>) = this.putAt(key, value)
+operator fun ChronicleMap.set(key: String, value: String) = this.putAt(key, value)
+operator fun ChronicleMap.set(key: String, value: Number) = this.putAt(key, value)
+operator fun ChronicleMap.set(key: String, value: Boolean) = this.putAt(key, value)
+
+operator fun ChronicleList.set(key: Int, value: List<*>) = this.putAt(key, value)
+operator fun ChronicleList.set(key: Int, value: Map<*, *>) = this.putAt(key, value)
+operator fun ChronicleList.set(key: Int, value: String) = this.putAt(key, value)
+operator fun ChronicleList.set(key: Int, value: Number) = this.putAt(key, value)
+operator fun ChronicleList.set(key: Int, value: Boolean) = this.putAt(key, value)
+
+operator fun BackendMap.set(key: String, value: Any) = this.putAt(key, value)
+operator fun BackendList.set(index: Int, value: Any) = this.putAt(index, value)
