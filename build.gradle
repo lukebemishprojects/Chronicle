@@ -22,8 +22,14 @@ java {
         withSourcesJar()
         withJavadocJar()
     }
-    registerFeature("testGenerator") {
-        usingSourceSet(sourceSets.create("testGenerator"))
+    registerFeature("testGeneratorMixin") {
+        usingSourceSet(sourceSets.create("testGeneratorMixin"))
+        withSourcesJar()
+        withJavadocJar()
+        disablePublication()
+    }
+    registerFeature("testGeneratorTarget") {
+        usingSourceSet(sourceSets.create("testGeneratorTarget"))
         withSourcesJar()
         withJavadocJar()
         disablePublication()
@@ -44,11 +50,17 @@ dependencies {
     generatorImplementation("org.ow2.asm:asm-tree:9.9")
     generatorImplementation(project(":"))
 
-    testGeneratorImplementation(project(":")) {
+    testGeneratorTargetApi(project(":"))
+    testGeneratorTargetCompileOnly("org.apache.groovy:groovy:4.0.28")
+    testGeneratorTargetCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+
+    testGeneratorMixinImplementation(project(":")) {
         capabilities {
-            requireFeature("fabric")
+            requireFeature("test-generator-target")
         }
     }
+    testGeneratorMixinCompileOnly("org.apache.groovy:groovy:4.0.28")
+    testGeneratorMixinCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
 }
 
 tasks.named("generatorJar", Jar) {
@@ -103,23 +115,23 @@ abstract class RunGeneratorTask extends DefaultTask {
 tasks.register('testGeneratorTask', RunGeneratorTask) {
     generatorClasspath.from(configurations.generatorRuntimeClasspath)
     generatorClasspath.from(tasks.generatorJar)
-    dslClasspath.from(configurations.testGeneratorRuntimeClasspath)
-    dslClasspath.from(tasks.testGeneratorJar)
+    dslClasspath.from(configurations.testGeneratorMixinRuntimeClasspath)
+    dslClasspath.from(tasks.testGeneratorMixinJar)
     outputDirectory = layout.buildDirectory.dir("generated/chronicle-generator-test")
-    outputPackage = "test.generated"
-    entrypoints.add("dev.lukebemish.chronicle.fabric.FabricModJson")
+    outputPackage = "test.generated.output"
+    entrypoints.add("test.generator.target.Root")
 }
 
 dependencies {
     testGeneratorUsageImplementation(files(tasks.named('testGeneratorTask', RunGeneratorTask).flatMap { it.outputDirectory }))
     testGeneratorUsageImplementation(project(":")) {
         capabilities {
-            requireFeature("fabric")
+            requireFeature("test-generator-mixin")
         }
     }
     testGeneratorUsageImplementation(project(":")) {
         capabilities {
-            requireFeature("test-generator")
+            requireFeature("test-generator-target")
         }
     }
     testGeneratorUsageImplementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")

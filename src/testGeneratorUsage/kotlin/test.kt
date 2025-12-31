@@ -1,14 +1,14 @@
 import dev.lukebemish.chronicle.core.ChronicleEngine
-import test.generated.dev.lukebemish.chronicle.fabric.FabricModJsonImpl
+import test.generated.output.test.generator.target.RootImpl
 
 fun main() {
-    val engine = ChronicleEngine(FabricModJsonImpl::class.java)
+    val engine = ChronicleEngine(RootImpl::class.java)
     val output = engine.execute {
-        id = "some-id"
-        version = "1.2.3"
-        depends {
-            mod("test") {
-                foo("1.0.0")
+        foo {
+            bar {
+                gizmo {
+                    this["key"] = "value"
+                }
             }
         }
     }
