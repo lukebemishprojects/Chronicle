@@ -3,9 +3,9 @@ package dev.lukebemish.chronicle.fabric;
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
+import dev.lukebemish.chronicle.core.DslValidate;
 import dev.lukebemish.chronicle.core.GenericChronicleList;
 import dev.lukebemish.chronicle.core.GenericChronicleMap;
-import dev.lukebemish.chronicle.core.MapView;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
@@ -25,7 +25,7 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void setId(String id) {
-        if (MOD_ID.asMatchPredicate().test(id)) {
+        if (!MOD_ID.asMatchPredicate().test(id)) {
             throw new IllegalStateException("Mod ID '" + id + "' is invalid; it must match the regex " + MOD_ID.pattern());
         }
         set("id", id);
@@ -107,15 +107,15 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {
-        backend().configure("contact", action, ContactInformation::new);
+        backend().configure("contact", action, ContactInformation.class);
     }
 
     public void authors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
-        backend().configureList("authors", action, People::new);
+        backend().configureList("authors", action, People.class);
     }
 
     public void contributors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
-        backend().configureList("contributors", action, People::new);
+        backend().configureList("contributors", action, People.class);
     }
 
     public void icon(String path) {
@@ -123,28 +123,28 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void icons(@DelegatesTo(value = Icons.class, strategy = Closure.DELEGATE_FIRST) Action<Icons> action) {
-        backend().configure("icon", action, Icons.VIEW);
+        backend().configure("icon", action, Icons.class);
     }
 
     public void jars(@DelegatesTo(value = NestedJarEntries.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntries> action) {
-        backend().configureList("jars", action, NestedJarEntries::new);
+        backend().configureList("jars", action, NestedJarEntries.class);
     }
 
     public void entrypoints(@DelegatesTo(value = Entrypoints.class, strategy = Closure.DELEGATE_FIRST) Action<Entrypoints> action) {
-        backend().configure("entrypoints", action, Entrypoints::new);
+        backend().configure("entrypoints", action, Entrypoints.class);
     }
 
     public void languageAdapters(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
-        backend().configure("languageAdapters", action, GenericChronicleMap::new);
+        backend().configure("languageAdapters", action, GenericChronicleMap.class);
     }
 
     public GenericChronicleMap getLanguageAdapters() {
-        backend().configure("languageAdapters", e -> {}, GenericChronicleMap::new);
+        backend().configure("languageAdapters", e -> {}, GenericChronicleMap.class);
         return (GenericChronicleMap) Objects.requireNonNull(get("languageAdapters"));
     }
 
     public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
-        backend().configureList("mixins", action, Mixins::new);
+        backend().configureList("mixins", action, Mixins.class);
     }
 
     public @Nullable String getAccessWidener() {
@@ -156,45 +156,41 @@ public class FabricModJson extends ChronicleMap {
     }
 
     public void depends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configure("depends", action, Dependencies::new);
+        backend().configure("depends", action, Dependencies.class);
     }
 
     public void recommends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configure("recommends", action, Dependencies::new);
+        backend().configure("recommends", action, Dependencies.class);
     }
 
     public void suggests(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configure("suggests", action, Dependencies::new);
+        backend().configure("suggests", action, Dependencies.class);
     }
 
     public void conflicts(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configure("conflicts", action, Dependencies::new);
+        backend().configure("conflicts", action, Dependencies.class);
     }
 
     public void breaks(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configure("breaks", action, Dependencies::new);
+        backend().configure("breaks", action, Dependencies.class);
     }
 
     public void custom(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
-        backend().configure("custom", action, GenericChronicleMap::new);
+        backend().configure("custom", action, GenericChronicleMap.class);
     }
 
-    public static final MapView<FabricModJson> VIEW = new MapView<>() {
-        @Override
-        public FabricModJson wrap(BackendMap map) {
-            return new FabricModJson(map);
+    @DslValidate
+    public static void validate(BackendMap map) {
+        if (!(map.get("id") instanceof String string)) {
+            throw new IllegalStateException("Expected 'id' to be present and a String");
         }
-
-        @Override
-        public void validate(BackendMap map) {
-            if (!(map.get("id") instanceof String string)) {
-                throw new IllegalStateException("Expected 'id' to be present and a String");
-            }
-            if (!(map.get("version") instanceof String)) {
-                throw new IllegalStateException("Expected 'version' to be present and a String");
-            }
+        if (!MOD_ID.asMatchPredicate().test(string)) {
+            throw new IllegalStateException("Mod ID '" + string + "' is invalid; it must match the regex " + MOD_ID.pattern());
         }
-    };
+        if (!(map.get("version") instanceof String)) {
+            throw new IllegalStateException("Expected 'version' to be present and a String");
+        }
+    }
 
     static final Pattern MOD_ID = Pattern.compile("^[a-z][a-z0-9-_]{1,63}");
 }

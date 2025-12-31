@@ -2,12 +2,62 @@ package dev.lukebemish.chronicle.core;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.jspecify.annotations.Nullable;
 
-public class ChronicleEngine<T> {
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public final class ChronicleEngine<T> {
+    private final ChronicleContext context;
     private final View<T> view;
+    private final Map<Class<?>, View<?>> views = new IdentityHashMap<>();
+    private final Map<Class<?>, Class<?>> implementations = new IdentityHashMap<>();
+    private final Set<Class<? extends ChronicleDsl>> dslPlugins = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    public ChronicleEngine(View<T> view) {
-        this.view = view;
+    public ChronicleEngine(Class<T> clazz) {
+        List<Class<? extends ChronicleDsl>> dsls = new ArrayList<>();
+        if (clazz.isAnnotationPresent(RequiresDsl.class)) {
+            dsls.addAll(Arrays.asList(clazz.getAnnotation(RequiresDsl.class).value()));
+        }
+
+        for (var dsl : dsls) {
+            // TODO: handle parent plugins being able to re-apply impl classes set up by child plugins
+            if (!dslPlugins.add(dsl)) {
+                continue;
+            }
+            try {
+                var ctor = dsl.getConstructor();
+                var instance = ctor.newInstance();
+                instance.register(new ChronicleDsl.Context() {
+                    @Override
+                    public <R> void registerImplementation(Class<R> type, Class<? extends R> implementation) {
+                        ChronicleEngine.this.registerImplementation(type, implementation);
+                    }
+
+                    @Override
+                    public void applyDsl(Class<? extends ChronicleDsl> dsl) {
+                        dsls.add(dsl);
+                    }
+                });
+            } catch (InvocationTargetException | NoSuchMethodException | InstantiationException |
+                     IllegalAccessException e) {
+                throw new RuntimeException("Could not initialize DSL " + dsl, e);
+            }
+        }
+
+        this.context = new ChronicleContext(this);
+        this.view = context.view(clazz);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -19,7 +69,7 @@ public class ChronicleEngine<T> {
     }
 
     private <R extends ChronicleList> Object executeList(ListView<R> listView, Action<R> action) {
-        var backend = new BackendList();
+        var backend = new BackendList(context);
         var dsl = listView.wrap(backend);
         action.call(dsl);
         listView.validate(backend);
@@ -27,10 +77,191 @@ public class ChronicleEngine<T> {
     }
 
     private <R extends ChronicleMap> Object executeMap(MapView<R> mapView, Action<R> action) {
-        var backend = new BackendMap();
+        var backend = new BackendMap(context);
         var dsl = mapView.wrap(backend);
         action.call(dsl);
         mapView.validate(backend);
         return backend.convert();
+    }
+
+    private void registerImplementation(Class<?> baseClazz, Class<?> implClazz) {
+        if (implementations.containsKey(baseClazz)) {
+            throw new IllegalStateException("Implementation for " + baseClazz + " is already registered: " + implementations.get(baseClazz));
+        } else if (!baseClazz.isAssignableFrom(implClazz)) {
+            throw new IllegalArgumentException("Implementation " + implClazz + " is not assignable to base class " + baseClazz);
+        }
+        implementations.put(baseClazz, implClazz);
+    }
+
+    @SuppressWarnings("unchecked")
+    <R> View<R> view(Class<R> clazz) {
+        if (ChronicleMap.class.isAssignableFrom(clazz)) {
+            @SuppressWarnings("unchecked")
+            var mapClazz = (Class<? extends ChronicleMap>) clazz;
+            return (View<R>) mapView(mapClazz);
+        } else if (ChronicleList.class.isAssignableFrom(clazz)) {
+            @SuppressWarnings("unchecked")
+            var listClazz = (Class<? extends ChronicleList>) clazz;
+            return (View<R>) listView(listClazz);
+        } else {
+            throw new IllegalArgumentException("No view available for class: " + clazz);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    <R extends ChronicleMap> MapView<R> mapView(Class<R> clazz) {
+        return (MapView<R>) views.computeIfAbsent(
+            findImpl(clazz),
+            c -> locateView(c, BackendMap.class)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    <R extends ChronicleList> ListView<R> listView(Class<R> clazz) {
+        return (ListView<R>) views.computeIfAbsent(
+            findImpl(clazz),
+            c -> locateView(c, BackendList.class)
+        );
+    }
+
+    private Class<?> findImpl(Class<?> baseClazz) {
+        Class<?> located;
+        while ((located = implementations.get(baseClazz)) != null) {
+            baseClazz = located;
+        }
+        return baseClazz;
+    }
+
+    private static final class MapViewImpl<T extends ChronicleMap> implements MapView<T> {
+        private final Wrapper<T> wrapper;
+        private final Validator validator;
+
+        MapViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
+            this.wrapper = wrapper;
+            this.validator = validator == null ? it -> {} : validator;
+        }
+
+        @Override
+        public T wrap(BackendMap map) {
+            return wrapper.wrap(map);
+        }
+
+        @Override
+        public void validate(BackendMap map) {
+            validator.validate(map);
+        }
+
+        private interface Validator {
+            void validate(BackendMap map);
+        }
+
+        private interface Wrapper<T extends ChronicleMap> {
+            T wrap(BackendMap map);
+        }
+    }
+
+    private static final class ListViewImpl<T extends ChronicleList> implements ListView<T> {
+        private final Wrapper<T> wrapper;
+        private final Validator validator;
+
+        ListViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
+            this.wrapper = wrapper;
+            this.validator = validator == null ? it -> {} : validator;
+        }
+
+        @Override
+        public T wrap(BackendList list) {
+            return wrapper.wrap(list);
+        }
+
+        @Override
+        public void validate(BackendList list) {
+            validator.validate(list);
+        }
+
+        private interface Validator {
+            void validate(BackendList list);
+        }
+
+        private interface Wrapper<T extends ChronicleList> {
+            T wrap(BackendList list);
+        }
+    }
+
+    private <R> View<R> locateView(Class<R> clazz, Class<?> backendType) {
+        if (clazz.isAnnotationPresent(RequiresDsl.class)) {
+            var dslClass = clazz.getAnnotation(RequiresDsl.class).value();
+            for (var dsl : dslClass) {
+                if (!this.dslPlugins.contains(dsl)) {
+                    throw new IllegalStateException("Class " + clazz + " requires DSLs " + dsl + " but context has " + this.dslPlugins);
+                }
+            }
+        }
+        try {
+            var ctor = clazz.getConstructor(backendType);
+            var ctorHandle = MethodHandles.lookup().unreflectConstructor(ctor);
+            Class<?> baseType;
+            Class<?> wrapperType;
+            Class<?> validatorType;
+            if (backendType == BackendMap.class) {
+                baseType = ChronicleMap.class;
+                wrapperType = MapViewImpl.Wrapper.class;
+                validatorType = MapViewImpl.Validator.class;
+            } else {
+                baseType = ChronicleList.class;
+                wrapperType = ListViewImpl.Wrapper.class;
+                validatorType = ListViewImpl.Validator.class;
+            }
+            var wrapper = LambdaMetafactory.metafactory(
+                MethodHandles.lookup(),
+                "wrap",
+                MethodType.methodType(wrapperType),
+                MethodType.methodType(baseType, backendType),
+                ctorHandle,
+                MethodType.methodType(clazz, backendType)
+            ).dynamicInvoker().invoke();
+            MethodHandle validatorHandle = null;
+            for (var method : clazz.getMethods()) {
+                if (method.isAnnotationPresent(DslValidate.class)) {
+                    if (validatorHandle != null) {
+                        throw new IllegalStateException("Multiple @DslValidate methods found in " + clazz);
+                    }
+                    if (method.getParameterCount() == 1 &&
+                        method.getReturnType() == void.class &&
+                        method.getParameterTypes()[0] == backendType
+                    ) {
+                        if (Modifier.isStatic(method.getModifiers())) {
+                            validatorHandle = MethodHandles.lookup().unreflect(method);
+                        } else {
+                            throw new IllegalStateException("@DslValidate method must be static: " + method);
+                        }
+                    } else {
+                        throw new IllegalStateException("@DslValidate method has invalid signature: " + method);
+                    }
+                }
+            }
+            Object validator = null;
+            if (validatorHandle != null) {
+                validator = LambdaMetafactory.metafactory(
+                    MethodHandles.lookup(),
+                    "validate",
+                    MethodType.methodType(validatorType),
+                    MethodType.methodType(void.class, backendType),
+                    validatorHandle,
+                    MethodType.methodType(void.class, backendType)
+                ).dynamicInvoker().invoke();
+            }
+            if (backendType == BackendMap.class) {
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                var view = (View<R>) new MapViewImpl((MapViewImpl.Wrapper) wrapper, (MapViewImpl.Validator) validator);
+                return view;
+            } else {
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                var view = (View<R>) new ListViewImpl((ListViewImpl.Wrapper) wrapper, (ListViewImpl.Validator) validator);
+                return view;
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 }

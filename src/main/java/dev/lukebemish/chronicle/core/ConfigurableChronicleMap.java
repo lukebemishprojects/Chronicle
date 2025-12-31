@@ -5,24 +5,7 @@ public abstract class ConfigurableChronicleMap<T> extends ChronicleMap {
         super(backend);
     }
 
-    protected abstract View<T> entriesView();
-
-    protected void configure(String key, Action<T> action) {
-        switch (entriesView()) {
-            case MapView<?> mapView -> configureMap(key, action, mapView);
-            case ListView<?> listView -> configureList(key, action, listView);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <R extends ChronicleMap> void configureMap(String key, Action<T> action, MapView<R> mapView) {
-        backend.configure(key, (Action<R>) (action), mapView);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <R extends ChronicleList> void configureList(String key, Action<T> action, ListView<R> listView) {
-        backend.configureList(key, (Action<R>) (action), listView);
-    }
+    protected abstract void configure(String key, Action<T> action);
 
     // Groovy compatibility
 

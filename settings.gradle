@@ -1,5 +1,52 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url "https://maven.lukebemish.dev/releases/"
+        }
+    }
+    plugins {
+        id 'org.jetbrains.kotlin.jvm' version '+'
+    }
+}
+
+buildscript {
+    dependencyLocking {
+        lockMode = LockMode.STRICT
+        lockAllConfigurations()
+        lockFile.set file("locks/settings-buildscript-gradle.lockfile")
+    }
+}
+
 plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '+'
+    id 'dev.lukebemish.managedversioning' version '+'
+    id 'dev.lukebemish.conventions' version '+'
+}
+
+gradle.lifecycle.beforeProject {p ->
+    p.buildscript{
+        dependencyLocking {
+            lockMode = LockMode.STRICT
+            lockAllConfigurations()
+            var cleanProjectName = (p.path + ":").replace(':', ' ').trim().replace(' ', '-')
+            lockFile.set file("locks/${cleanProjectName}buildscript-gradle.lockfile")
+        }
+    }
+}
+
+managedVersioning {
+    versionFile.set file('version.properties')
+    versionPRs()
+    versionSnapshots()
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
 }
 
 rootProject.name = 'chronicle'

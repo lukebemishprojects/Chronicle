@@ -2,12 +2,12 @@ package dev.lukebemish.chronicle.fabric;
 
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
-import dev.lukebemish.chronicle.core.MapView;
+import dev.lukebemish.chronicle.core.DslValidate;
 
 import java.util.Objects;
 
 public class NestedJarEntry extends ChronicleMap {
-    private NestedJarEntry(BackendMap backend) {
+    public NestedJarEntry(BackendMap backend) {
         super(backend);
     }
 
@@ -19,17 +19,10 @@ public class NestedJarEntry extends ChronicleMap {
         set("file", file);
     }
 
-    public static final MapView<NestedJarEntry> VIEW = new MapView<>() {
-        @Override
-        public NestedJarEntry wrap(BackendMap map) {
-            return new NestedJarEntry(map);
+    @DslValidate
+    public static void validate(BackendMap map) {
+        if (!(map.get("file") instanceof String)) {
+            throw new IllegalStateException("Expected 'file' to be present and a String");
         }
-
-        @Override
-        public void validate(BackendMap map) {
-            if (!(map.get("file") instanceof String)) {
-                throw new IllegalStateException("Expected 'file' to be present and a String");
-            }
-        }
-    };
+    }
 }

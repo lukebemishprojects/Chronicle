@@ -5,11 +5,7 @@ public abstract class ValueConfigurableChronicleMap<T, R> extends ConfigurableCh
         super(backend);
     }
 
-    protected abstract void valueConsumer(T entry, R value);
-
-    protected void configure(String key, R value) {
-        configure(key, entry -> valueConsumer(entry, value));
-    }
+    abstract protected void configure(String key, R value);
 
     // Groovy compatibility
 

@@ -1,6 +1,5 @@
 package dev.lukebemish.chronicle.core;
 
-import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -18,34 +17,24 @@ final class Utils {
         };
     }
 
-    @Contract("null -> null; !null -> !null")
-    static @Nullable Object wrap(@Nullable Object value) {
+    static Object backendify(Object value, ChronicleContext context) {
         return switch (value) {
-            case BackendMap map -> new GenericChronicleMap(map);
-            case BackendList list -> new GenericChronicleList(list);
-            case null -> null;
-            default -> value;
-        };
-    }
-
-    static Object backendify(Object value) {
-        return switch (value) {
-            case ChronicleMap map -> backendify(map.backend.convert());
-            case ChronicleList list -> backendify(list.backend.convert());
+            case ChronicleMap map -> backendify(map.backend.convert(), context);
+            case ChronicleList list -> backendify(list.backend.convert(), context);
             case Number n -> n;
             case String s -> s;
             case Boolean b -> b;
             case List<?> list -> {
-                BackendList backendList = new BackendList();
+                BackendList backendList = new BackendList(context);
                 for (Object item : list) {
-                    backendList.add(backendify(item));
+                    backendList.add(backendify(item, context));
                 }
                 yield backendList;
             }
             case Map<?, ?> map -> {
-                BackendMap backendMap = new BackendMap();
+                BackendMap backendMap = new BackendMap(context);
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    backendMap.set(entry.getKey().toString(), backendify(entry.getValue()));
+                    backendMap.set(entry.getKey().toString(), backendify(entry.getValue(), context));
                 }
                 yield backendMap;
             }

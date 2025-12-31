@@ -12,6 +12,6 @@ public class People extends ChronicleList {
     }
 
     public void add(@DelegatesTo(value = Person.class, strategy = Closure.DELEGATE_FIRST) Action<Person> action) {
-        this.backend().add(action, Person.VIEW);
+        this.backend().add(action, Person.class);
     }
 }

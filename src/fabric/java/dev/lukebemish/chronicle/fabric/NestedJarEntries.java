@@ -12,6 +12,6 @@ public class NestedJarEntries extends ChronicleList {
     }
 
     public void jar(@DelegatesTo(value = NestedJarEntry.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntry> action) {
-        backend().add(action, NestedJarEntry.VIEW);
+        backend().add(action, NestedJarEntry.class);
     }
 }

@@ -3,14 +3,14 @@ package dev.lukebemish.chronicle.fabric;
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
-import dev.lukebemish.chronicle.core.MapView;
+import dev.lukebemish.chronicle.core.DslValidate;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
 import java.util.Objects;
 
 public class Person extends ChronicleMap {
-    private Person(BackendMap backend) {
+    public Person(BackendMap backend) {
         super(backend);
     }
 
@@ -23,20 +23,13 @@ public class Person extends ChronicleMap {
     }
 
     public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {
-        backend().configure("contact", action, ContactInformation::new);
+        backend().configure("contact", action, ContactInformation.class);
     }
 
-    public static final MapView<Person> VIEW = new MapView<>() {
-        @Override
-        public Person wrap(BackendMap map) {
-            return new Person(map);
+    @DslValidate
+    public static void validate(BackendMap map) {
+        if (!(map.get("name") instanceof String)) {
+            throw new IllegalStateException("Expected 'name' to be present and a String");
         }
-
-        @Override
-        public void validate(BackendMap map) {
-            if (!(map.get("name") instanceof String)) {
-                throw new IllegalStateException("Expected 'name' to be present and a String");
-            }
-        }
-    };
+    }
 }

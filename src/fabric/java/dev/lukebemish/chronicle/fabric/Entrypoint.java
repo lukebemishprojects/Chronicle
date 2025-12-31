@@ -2,13 +2,13 @@ package dev.lukebemish.chronicle.fabric;
 
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
-import dev.lukebemish.chronicle.core.MapView;
+import dev.lukebemish.chronicle.core.DslValidate;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 public class Entrypoint extends ChronicleMap {
-    private Entrypoint(BackendMap backend) {
+    public Entrypoint(BackendMap backend) {
         super(backend);
     }
 
@@ -28,17 +28,10 @@ public class Entrypoint extends ChronicleMap {
         backend().set("value", value);
     }
 
-    public static final MapView<Entrypoint> VIEW = new MapView<>() {
-        @Override
-        public Entrypoint wrap(BackendMap map) {
-            return new Entrypoint(map);
+    @DslValidate
+    public static void validate(BackendMap map) {
+        if (!(map.get("value") instanceof String)) {
+            throw new IllegalStateException("Expected 'value' to be present and a String");
         }
-
-        @Override
-        public void validate(BackendMap map) {
-            if (!(map.get("value") instanceof String)) {
-                throw new IllegalStateException("Expected 'value' to be present and a String");
-            }
-        }
-    };
+    }
 }

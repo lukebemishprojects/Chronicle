@@ -2,13 +2,13 @@ package dev.lukebemish.chronicle.fabric;
 
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
-import dev.lukebemish.chronicle.core.MapView;
+import dev.lukebemish.chronicle.core.DslValidate;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 public class Mixin extends ChronicleMap {
-    private Mixin(BackendMap backend) {
+    public Mixin(BackendMap backend) {
         super(backend);
     }
 
@@ -32,17 +32,10 @@ public class Mixin extends ChronicleMap {
         backend().set("environment", environment instanceof Environment e ? e.getValue() : null);
     }
 
-    public static final MapView<Mixin> VIEW = new MapView<>() {
-        @Override
-        public Mixin wrap(BackendMap map) {
-            return new Mixin(map);
+    @DslValidate
+    public static void validate(BackendMap map) {
+        if (!(map.get("config") instanceof String)) {
+            throw new IllegalStateException("Expected 'config' to be present and a String");
         }
-
-        @Override
-        public void validate(BackendMap map) {
-            if (!(map.get("config") instanceof String)) {
-                throw new IllegalStateException("Expected 'config' to be present and a String");
-            }
-        }
-    };
+    }
 }

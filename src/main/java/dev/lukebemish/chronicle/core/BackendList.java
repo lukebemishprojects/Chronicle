@@ -3,10 +3,14 @@ package dev.lukebemish.chronicle.core;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public final class BackendList implements Iterable<Object> {
     private final List<Object> values = new ArrayList<>();
+    private final ChronicleContext context;
+
+    public BackendList(ChronicleContext context) {
+        this.context = context;
+    }
 
     @Override
     public Iterator<Object> iterator() {
@@ -20,17 +24,21 @@ public final class BackendList implements Iterable<Object> {
 
             @Override
             public Object next() {
-                return Utils.wrap(backendIterator.next());
+                return context.wrap(backendIterator.next());
             }
         };
     }
 
     public List<Object> convert() {
         List<Object> list = new ArrayList<>();
-        for (Object item : this) {
+        for (Object item : values) {
             list.add(Utils.unBackendify(item));
         }
         return list;
+    }
+
+    public ChronicleContext context() {
+        return context;
     }
 
     public int size() {
@@ -38,11 +46,11 @@ public final class BackendList implements Iterable<Object> {
     }
 
     public Object remove(int i) {
-        return Utils.wrap(values.remove(i));
+        return context.wrap(values.remove(i));
     }
 
     public void add(Object value) {
-        values.add(Utils.backendify(value));
+        values.add(Utils.backendify(value, context));
     }
 
     public void add(boolean value) {
@@ -50,22 +58,23 @@ public final class BackendList implements Iterable<Object> {
     }
 
     public Object get(int i) {
-        return Utils.wrap(values.get(i));
+        return context.wrap(values.get(i));
     }
 
     public void set(int i, Object value) {
-        values.set(i, Utils.backendify(value));
+        values.set(i, Utils.backendify(value, context));
     }
 
-    public <T extends ChronicleMap> void add(Action<T> action, MapView<T> view) {
-        BackendMap backendMap = new BackendMap();
+    public <T extends ChronicleMap> void add(Action<T> action, Class<T> viewClass) {
+        BackendMap backendMap = new BackendMap(this.context);
+        var view = context.mapView(viewClass);
         T wrapped = view.wrap(backendMap);
         action.call(wrapped);
         view.validate(backendMap);
         values.add(backendMap);
     }
 
-    public <T extends ChronicleMap> void configure(int index, Action<T> action, MapView<T> view) {
+    public <T extends ChronicleMap> void configure(int index, Action<T> action, Class<T> viewClass) {
         var existing = Utils.unwrap(get(index));
         BackendMap map;
         if (existing instanceof BackendMap existingMap) {
@@ -73,6 +82,7 @@ public final class BackendList implements Iterable<Object> {
         } else {
             throw new IllegalStateException("Cannot enter index " + index + " because it is already set to a non-map value");
         }
+        var view = context.mapView(viewClass);
         T wrapped = view.wrap(map);
         action.call(wrapped);
         view.validate(map);

@@ -1,15 +1,12 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
+    id 'org.jetbrains.kotlin.jvm'
     id 'java-library'
     id 'groovy'
 }
 
 group = 'dev.lukebemish'
-version = '1.0.0'
 
-repositories {
-    mavenCentral()
-}
+sourceSets.create("testGeneratorUsage")
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -19,6 +16,17 @@ java {
         usingSourceSet(sourceSets.create("fabric"))
         withSourcesJar()
         withJavadocJar()
+    }
+    registerFeature("generator") {
+        usingSourceSet(sourceSets.create("generator"))
+        withSourcesJar()
+        withJavadocJar()
+    }
+    registerFeature("testGenerator") {
+        usingSourceSet(sourceSets.create("testGenerator"))
+        withSourcesJar()
+        withJavadocJar()
+        disablePublication()
     }
 }
 
@@ -31,6 +39,90 @@ dependencies {
     fabricApi(project(":"))
     fabricCompileOnly("org.apache.groovy:groovy:4.0.28")
     fabricCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+
+    generatorImplementation("org.ow2.asm:asm:9.9")
+    generatorImplementation("org.ow2.asm:asm-tree:9.9")
+    generatorImplementation(project(":"))
+
+    testGeneratorImplementation(project(":")) {
+        capabilities {
+            requireFeature("fabric")
+        }
+    }
+}
+
+tasks.named("generatorJar", Jar) {
+    manifest.attributes(
+        "Main-Class": "dev.lukebemish.chronicle.generator.DslCreator"
+    )
+}
+
+abstract class RunGeneratorTask extends DefaultTask {
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
+
+    @Input
+    abstract ListProperty<String> getEntrypoints()
+
+    @Classpath
+    @InputFiles
+    abstract ConfigurableFileCollection getGeneratorClasspath()
+
+    @Classpath
+    @InputFiles
+    abstract ConfigurableFileCollection getDslClasspath()
+
+    @Input
+    abstract Property<String> getOutputPackage()
+
+    @Inject
+    protected abstract ExecOperations getExecOperations()
+
+    @TaskAction
+    void run() {
+        if (outputDirectory.get().asFile.exists()) {
+            outputDirectory.get().asFile.deleteDir()
+        }
+        execOperations.javaexec {
+            classpath = generatorClasspath
+            mainClass.set("dev.lukebemish.chronicle.generator.DslCreator")
+            def runArgs = [
+                "-o", outputDirectory.get().asFile.absolutePath,
+                "--package", outputPackage.get(),
+                "-cp", dslClasspath.asPath
+            ]
+            for (String entrypoint : entrypoints.get()) {
+                runArgs.add("--entrypoint")
+                runArgs.add(entrypoint)
+            }
+            args = runArgs
+        }.rethrowFailure().assertNormalExitValue()
+    }
+}
+
+tasks.register('testGeneratorTask', RunGeneratorTask) {
+    generatorClasspath.from(configurations.generatorRuntimeClasspath)
+    generatorClasspath.from(tasks.generatorJar)
+    dslClasspath.from(configurations.testGeneratorRuntimeClasspath)
+    dslClasspath.from(tasks.testGeneratorJar)
+    outputDirectory = layout.buildDirectory.dir("generated/chronicle-generator-test")
+    outputPackage = "test.generated"
+    entrypoints.add("dev.lukebemish.chronicle.fabric.FabricModJson")
+}
+
+dependencies {
+    testGeneratorUsageImplementation(files(tasks.named('testGeneratorTask', RunGeneratorTask).flatMap { it.outputDirectory }))
+    testGeneratorUsageImplementation(project(":")) {
+        capabilities {
+            requireFeature("fabric")
+        }
+    }
+    testGeneratorUsageImplementation(project(":")) {
+        capabilities {
+            requireFeature("test-generator")
+        }
+    }
+    testGeneratorUsageImplementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
 }
 
 kotlin {

@@ -8,16 +8,11 @@ public class GenericChronicleMap extends ConfigurableChronicleMap<GenericChronic
     }
 
     @Override
-    protected MapView<GenericChronicleMap> entriesView() {
-        return GenericChronicleMap::new;
-    }
-
-    @Override
     public void configure(String key, @DelegatesTo(value = GenericChronicleMap.class) Action<GenericChronicleMap> action) {
-        super.configure(key, action);
+        backend.configure(key, action, GenericChronicleMap.class);
     }
 
     public void add(String key, @DelegatesTo(value = GenericChronicleMap.class) Action<GenericChronicleMap> action) {
-        backend.add(key, action, GenericChronicleMap::new);
+        backend.add(key, action, GenericChronicleMap.class);
     }
 }

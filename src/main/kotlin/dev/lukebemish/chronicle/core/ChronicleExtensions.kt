@@ -2,10 +2,10 @@
 
 package dev.lukebemish.chronicle.core
 
-class ValueKind<T> private constructor(private val cast: (Any?) -> T, private val create: (() -> T)? = null) {
-    internal fun check(value: Any?): T {
+class ValueKind<T> private constructor(private val cast: (Any?) -> T, private val create: ((ChronicleContext) -> T)? = null) {
+    internal fun check(value: Any?, context: ChronicleContext): T {
         return if (value == null && create != null) {
-            create()
+            create(context)
         } else {
             cast(value)
         }
@@ -17,17 +17,17 @@ class ValueKind<T> private constructor(private val cast: (Any?) -> T, private va
         val BOOLEAN = ValueKind<Boolean?>({ it as Boolean? })
         val MAP = ValueKind<GenericChronicleMap?>({ it as GenericChronicleMap? })
         val LIST = ValueKind<GenericChronicleList?>({ it as GenericChronicleList? })
-        val CREATE_MAP = ValueKind<GenericChronicleMap>({ it as GenericChronicleMap }, {
-            GenericChronicleMap(BackendMap())
+        val CREATE_MAP = ValueKind<GenericChronicleMap>({ it as GenericChronicleMap }, { context ->
+            context.mapView(GenericChronicleMap::class.java).wrap(BackendMap(context))
         })
-        val CREATE_LIST = ValueKind<GenericChronicleList>({ it as GenericChronicleList }, {
-            GenericChronicleList(BackendList())
+        val CREATE_LIST = ValueKind<GenericChronicleList>({ it as GenericChronicleList }, { context ->
+            context.listView(GenericChronicleList::class.java).wrap(BackendList(context))
         })
     }
 }
 
-operator fun <T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key))
-operator fun <T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index))!!
+operator fun <T: Any?> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key), backend().context())
+operator fun <T: Any?> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index), backend().context())!!
 
 context(outer: ConfigurableChronicleMap<T>)
 operator fun <T: Any> String.invoke(action: Action<T>) {
