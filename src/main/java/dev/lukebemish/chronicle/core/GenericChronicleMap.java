@@ -1,5 +1,6 @@
 package dev.lukebemish.chronicle.core;
 
+import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
 public class GenericChronicleMap extends ConfigurableChronicleMap<GenericChronicleMap> {
@@ -8,11 +9,11 @@ public class GenericChronicleMap extends ConfigurableChronicleMap<GenericChronic
     }
 
     @Override
-    public void configure(String key, @DelegatesTo(value = GenericChronicleMap.class) Action<GenericChronicleMap> action) {
+    public void configure(String key, @DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend.configure(key, action, GenericChronicleMap.class);
     }
 
-    public void add(String key, @DelegatesTo(value = GenericChronicleMap.class) Action<GenericChronicleMap> action) {
+    public void add(String key, @DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend.add(key, action, GenericChronicleMap.class);
     }
 }
