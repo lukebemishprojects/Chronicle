@@ -2,40 +2,18 @@
 
 package dev.lukebemish.chronicle.core
 
-class ValueKind<T> private constructor(private val cast: (Any?) -> T, private val create: ((ChronicleContext) -> T)? = null) {
-    internal fun check(value: Any?, context: ChronicleContext): T {
-        return if (value == null && create != null) {
-            create(context)
-        } else {
-            cast(value)
-        }
-    }
+import kotlin.reflect.KClass
 
-    companion object {
-        val STRING = ValueKind<String?>({ it as String? })
-        val NUMBER = ValueKind<Number?>({ it as Number? })
-        val BOOLEAN = ValueKind<Boolean?>({ it as Boolean? })
-        val MAP = ValueKind<GenericChronicleMap?>({ it as GenericChronicleMap? })
-        val LIST = ValueKind<GenericChronicleList?>({ it as GenericChronicleList? })
-        val CREATE_MAP = ValueKind<GenericChronicleMap>({ it as GenericChronicleMap }, { context ->
-            context.mapView(GenericChronicleMap::class.java).wrap(BackendMap(context))
-        })
-        val CREATE_LIST = ValueKind<GenericChronicleList>({ it as GenericChronicleList }, { context ->
-            context.listView(GenericChronicleList::class.java).wrap(BackendList(context))
-        })
-    }
-}
-
-val STRING = ValueKind.STRING
-val NUMBER = ValueKind.NUMBER
-val BOOLEAN = ValueKind.BOOLEAN
-val MAP = ValueKind.MAP
-val LIST = ValueKind.LIST
-val CREATE_MAP = ValueKind.CREATE_MAP
-val CREATE_LIST = ValueKind.CREATE_LIST
-
-operator fun <T> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key), backend().context())
-operator fun <T> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index), backend().context())!!
+operator fun ChronicleMap.get(key: String, type: KClass<Number>): Number? = get(key) as Number?
+operator fun ChronicleMap.get(key: String, type: KClass<String>): String? = get(key) as String?
+operator fun ChronicleMap.get(key: String, type: KClass<Boolean>): Boolean? = get(key) as Boolean?
+operator fun ChronicleMap.get(key: String, type: KClass<GenericChronicleMap>): GenericChronicleMap? = get(key) as GenericChronicleMap?
+operator fun ChronicleMap.get(key: String, type: KClass<GenericChronicleList>): GenericChronicleList? = get(key) as GenericChronicleList?
+operator fun ChronicleList.get(index: Int, type: KClass<Number>): Number = get(index) as Number
+operator fun ChronicleList.get(index: Int, type: KClass<String>): String = get(index) as String
+operator fun ChronicleList.get(index: Int, type: KClass<Boolean>): Boolean = get(index) as Boolean
+operator fun ChronicleList.get(index: Int, type: KClass<GenericChronicleMap>): GenericChronicleMap = get(index) as GenericChronicleMap
+operator fun ChronicleList.get(index: Int, type: KClass<GenericChronicleList>): GenericChronicleList = get(index) as GenericChronicleList
 
 context(outer: ConfigurableChronicleMap<T>)
 operator fun <T: Any> String.invoke(action: Action<T>) {
