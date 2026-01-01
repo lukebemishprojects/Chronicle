@@ -1,0 +1,18 @@
+[versions]
+
+groovy = "4.0.28"
+kotlin = "2.2.20"
+gradle = "9.2.1"
+jspecify = "1.0.0"
+jetbrains-annotations = "26.0.2"
+asm = "9.9"
+
+[libraries]
+
+groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+gradle = { module = "org.gradle.experimental:gradle-public-api", version.ref = "gradle" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+asm-core = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }

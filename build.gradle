@@ -1,6 +1,7 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm'
     id 'java-library'
+    id 'maven-publish'
     id 'groovy'
 }
 
@@ -17,6 +18,16 @@ java {
         withSourcesJar()
         withJavadocJar()
     }
+    registerFeature("neoforge") {
+        usingSourceSet(sourceSets.create("neoforge"))
+        withSourcesJar()
+        withJavadocJar()
+    }
+    registerFeature("mixin") {
+        usingSourceSet(sourceSets.create("mixin"))
+        withSourcesJar()
+        withJavadocJar()
+    }
     registerFeature("generator") {
         usingSourceSet(sourceSets.create("generator"))
         withSourcesJar()
@@ -24,43 +35,52 @@ java {
     }
     registerFeature("testGeneratorMixin") {
         usingSourceSet(sourceSets.create("testGeneratorMixin"))
-        withSourcesJar()
-        withJavadocJar()
         disablePublication()
     }
     registerFeature("testGeneratorTarget") {
         usingSourceSet(sourceSets.create("testGeneratorTarget"))
-        withSourcesJar()
-        withJavadocJar()
         disablePublication()
     }
 }
 
 dependencies {
-    compileOnlyApi("org.jetbrains:annotations:26.0.2")
-    compileOnlyApi("org.jspecify:jspecify:1.0.0")
-    compileOnly("org.apache.groovy:groovy:4.0.28")
-    compileOnly(gradleApi())
+    compileOnlyApi(libs.jetbrains.annotations)
+    compileOnlyApi(libs.jspecify)
+    compileOnly(libs.groovy)
+    compileOnly(libs.gradle) {
+        capabilities {
+            requireFeature "internal"
+        }
+    }
+    compileOnly(libs.kotlin.stdlib)
 
     fabricApi(project(":"))
-    fabricCompileOnly("org.apache.groovy:groovy:4.0.28")
-    fabricCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+    fabricCompileOnly(libs.groovy)
+    fabricCompileOnly(libs.kotlin.stdlib)
 
-    generatorImplementation("org.ow2.asm:asm:9.9")
-    generatorImplementation("org.ow2.asm:asm-tree:9.9")
+    neoforgeApi(project(":"))
+    neoforgeCompileOnly(libs.groovy)
+    neoforgeCompileOnly(libs.kotlin.stdlib)
+
+    mixinApi(project(":"))
+    mixinCompileOnly(libs.groovy)
+    mixinCompileOnly(libs.kotlin.stdlib)
+
+    generatorImplementation(libs.asm.core)
+    generatorImplementation(libs.asm.tree)
     generatorImplementation(project(":"))
 
     testGeneratorTargetApi(project(":"))
-    testGeneratorTargetCompileOnly("org.apache.groovy:groovy:4.0.28")
-    testGeneratorTargetCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+    testGeneratorTargetCompileOnly(libs.groovy)
+    testGeneratorTargetCompileOnly(libs.kotlin.stdlib)
 
     testGeneratorMixinImplementation(project(":")) {
         capabilities {
             requireFeature("test-generator-target")
         }
     }
-    testGeneratorMixinCompileOnly("org.apache.groovy:groovy:4.0.28")
-    testGeneratorMixinCompileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
+    testGeneratorMixinCompileOnly(libs.groovy)
+    testGeneratorMixinCompileOnly(libs.kotlin.stdlib)
 }
 
 tasks.named("generatorJar", Jar) {
@@ -134,8 +154,8 @@ dependencies {
             requireFeature("test-generator-target")
         }
     }
-    testGeneratorUsageImplementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.20")
-    testGeneratorUsageImplementation("org.apache.groovy:groovy:4.0.28")
+    testGeneratorUsageImplementation(libs.kotlin.stdlib)
+    testGeneratorUsageImplementation(libs.groovy)
 }
 
 kotlin {
@@ -143,5 +163,14 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-parameters")
         freeCompilerArgs.add("-no-stdlib")
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            suppressAllPomMetadataWarnings()
+        }
     }
 }

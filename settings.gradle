@@ -44,6 +44,10 @@ managedVersioning {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven {
+            name = "Gradle Releases"
+            url = "https://repo.gradle.org/gradle/libs-releases"
+        }
     }
 
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
