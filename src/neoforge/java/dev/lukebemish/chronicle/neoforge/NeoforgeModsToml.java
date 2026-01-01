@@ -93,6 +93,14 @@ public class NeoforgeModsToml extends ChronicleMap {
         backend().putAt("logoBlur", logoBlur);
     }
 
+    public void accessTransformers(@DelegatesTo(value = AccessTransformers.class, strategy = Closure.DELEGATE_FIRST) Action<AccessTransformers> action) {
+        backend().configureList("accessTransformers", action, AccessTransformers.class);
+    }
+
+    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
+        backend().configureList("mixins", action, Mixins.class);
+    }
+
     @DslValidate
     public static void validate(BackendMap map) {
         if (!(map.get("license") instanceof String)) {

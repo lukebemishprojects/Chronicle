@@ -795,6 +795,7 @@ public class DslCreator {
             if (referenced != null) {
                 requiredDslSearch.addAll(referenced);
             }
+            requiredDslSearch.addAll(mixins.getOrDefault(target, List.of()));
         }
         for (var dslName : requiredDslSearch) {
             var node = parse(loader, dslName);

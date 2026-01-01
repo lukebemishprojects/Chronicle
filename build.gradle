@@ -33,6 +33,10 @@ java {
         withSourcesJar()
         withJavadocJar()
     }
+    registerFeature("pluginDsl") {
+        usingSourceSet(sourceSets.create("pluginDsl"))
+        disablePublication()
+    }
     registerFeature("testGeneratorMixin") {
         usingSourceSet(sourceSets.create("testGeneratorMixin"))
         disablePublication()
@@ -53,6 +57,28 @@ dependencies {
         }
     }
     compileOnly(libs.kotlin.stdlib)
+
+    pluginDslImplementation(project(":")) {
+        capabilities {
+            requireFeature("fabric")
+        }
+    }
+    pluginDslImplementation(project(":")) {
+        capabilities {
+            requireFeature("neoforge")
+        }
+    }
+    pluginDslImplementation(project(":")) {
+        capabilities {
+            requireFeature("mixin")
+        }
+    }
+    pluginDslCompileOnly(libs.gradle) {
+        capabilities {
+            requireFeature "internal"
+        }
+    }
+    pluginDslCompileOnly(libs.kotlin.stdlib)
 
     fabricApi(project(":"))
     fabricCompileOnly(libs.groovy)
@@ -132,7 +158,7 @@ abstract class RunGeneratorTask extends DefaultTask {
     }
 }
 
-tasks.register('testGeneratorTask', RunGeneratorTask) {
+tasks.register('runTestGenerator', RunGeneratorTask) {
     generatorClasspath.from(configurations.generatorRuntimeClasspath)
     generatorClasspath.from(tasks.generatorJar)
     dslClasspath.from(configurations.testGeneratorMixinRuntimeClasspath)
@@ -142,8 +168,20 @@ tasks.register('testGeneratorTask', RunGeneratorTask) {
     entrypoints.add("test.generator.target.Root")
 }
 
+tasks.register('runPluginDslGenerator', RunGeneratorTask) {
+    generatorClasspath.from(configurations.generatorRuntimeClasspath)
+    generatorClasspath.from(tasks.generatorJar)
+    dslClasspath.from(configurations.pluginDslRuntimeClasspath)
+    dslClasspath.from(tasks.pluginDslJar)
+    outputDirectory = layout.buildDirectory.dir("generated/plugin-dsl")
+    outputPackage = "dev.lukebemish.chronicle.plugin.dsl.generated"
+    entrypoints.add("dev.lukebemish.chronicle.fabric.FabricModJson")
+    entrypoints.add("dev.lukebemish.chronicle.neoforge.NeoforgeModsToml")
+    entrypoints.add("dev.lukebemish.chronicle.mixin.MixinConfig")
+}
+
 dependencies {
-    testGeneratorUsageImplementation(files(tasks.named('testGeneratorTask', RunGeneratorTask).flatMap { it.outputDirectory }))
+    testGeneratorUsageImplementation(files(tasks.named('runTestGenerator', RunGeneratorTask).flatMap { it.outputDirectory }))
     testGeneratorUsageImplementation(project(":")) {
         capabilities {
             requireFeature("test-generator-mixin")
