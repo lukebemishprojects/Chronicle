@@ -635,7 +635,7 @@ public class DslCreator {
 
         for (var target : targets) {
             var superNode = parse(loader, target);
-            var implClass = ImplClass.from(cache, target);
+            var implClass = Objects.requireNonNull(ImplClass.from(cache, target));
             var implName = implMap.get(target);
             var outputNode = new ClassNode();
             outputNode.version = Math.max(Opcodes.V21, superNode.version);
