@@ -1,3 +1,5 @@
+@file:JvmSynthetic
+
 package dev.lukebemish.chronicle.mixin
 
 import kotlin.reflect.KClass
