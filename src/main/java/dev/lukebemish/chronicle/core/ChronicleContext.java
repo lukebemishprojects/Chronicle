@@ -3,8 +3,12 @@ package dev.lukebemish.chronicle.core;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+
 public final class ChronicleContext {
     private final ChronicleEngine<?> engine;
+    private final Map<ContextKey<?>, Object> contextData = new IdentityHashMap<>();
 
     ChronicleContext(ChronicleEngine<?> engine) {
         this.engine = engine;
@@ -30,5 +34,14 @@ public final class ChronicleContext {
             case null -> null;
             default -> value;
         };
+    }
+
+    void setContextData(ContextKey<?> key, Object value) {
+        contextData.put(key, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> @Nullable T getContextData(ContextKey<T> key) {
+        return (T) contextData.get(key);
     }
 }

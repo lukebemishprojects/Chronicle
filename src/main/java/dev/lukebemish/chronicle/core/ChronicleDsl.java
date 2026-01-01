@@ -6,5 +6,6 @@ public interface ChronicleDsl {
     interface Context {
         <R> void registerImplementation(Class<R> type, Class<? extends R> implementation);
         void applyDsl(Class<? extends ChronicleDsl> dsl);
+        void requiresContextData(ContextKey<?> key);
     }
 }

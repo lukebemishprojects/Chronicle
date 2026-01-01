@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public final class ChronicleEngine<T> {
     private final ChronicleContext context;
@@ -28,10 +29,24 @@ public final class ChronicleEngine<T> {
     private final Set<Class<? extends ChronicleDsl>> dslPlugins = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public ChronicleEngine(Class<T> clazz) {
+        this(clazz, builder -> {});
+    }
+
+    public ChronicleEngine(Class<T> clazz, Consumer<ContextDataBuilder> contextData) {
         List<Class<? extends ChronicleDsl>> dsls = new ArrayList<>();
         if (clazz.isAnnotationPresent(RequiresDsl.class)) {
             dsls.addAll(Arrays.asList(clazz.getAnnotation(RequiresDsl.class).value()));
         }
+        this.context = new ChronicleContext(this);
+        contextData.accept(new ContextDataBuilder() {
+            @Override
+            public <R> void add(ContextKey<R> key, R value) {
+                if (context.getContextData(key) != null) {
+                    throw new IllegalStateException("Context data for key " + key + " is already set");
+                }
+                context.setContextData(key, value);
+            }
+        });
 
         for (var dsl : dsls) {
             // TODO: handle parent plugins being able to re-apply impl classes set up by child plugins
@@ -51,15 +66,25 @@ public final class ChronicleEngine<T> {
                     public void applyDsl(Class<? extends ChronicleDsl> dsl) {
                         dsls.add(dsl);
                     }
+
+                    @Override
+                    public void requiresContextData(ContextKey<?> key) {
+                        var value = context.getContextData(key);
+                        if (value == null) {
+                            throw new IllegalStateException("DSL " + dsl + " requires context data for key " + key + " but none was provided");
+                        }
+                    }
                 });
             } catch (InvocationTargetException | NoSuchMethodException | InstantiationException |
                      IllegalAccessException e) {
                 throw new RuntimeException("Could not initialize DSL " + dsl, e);
             }
         }
-
-        this.context = new ChronicleContext(this);
         this.view = context.view(clazz);
+    }
+
+    public interface ContextDataBuilder {
+        <T> void add(ContextKey<T> key, T value);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
