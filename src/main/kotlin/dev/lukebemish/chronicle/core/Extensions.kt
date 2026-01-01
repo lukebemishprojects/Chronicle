@@ -26,6 +26,14 @@ class ValueKind<T> private constructor(private val cast: (Any?) -> T, private va
     }
 }
 
+val STRING = ValueKind.STRING
+val NUMBER = ValueKind.NUMBER
+val BOOLEAN = ValueKind.BOOLEAN
+val MAP = ValueKind.MAP
+val LIST = ValueKind.LIST
+val CREATE_MAP = ValueKind.CREATE_MAP
+val CREATE_LIST = ValueKind.CREATE_LIST
+
 operator fun <T> ChronicleMap.get(key: String, type: ValueKind<T>): T? = type.check(get(key), backend().context())
 operator fun <T> ChronicleList.get(index: Int, type: ValueKind<T>): T & Any = type.check(get(index), backend().context())!!
 
