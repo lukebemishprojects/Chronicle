@@ -89,6 +89,16 @@ public class MixinConfig extends ChronicleMap {
         backend().putAt("package", pkg);
     }
 
+    // Overloads due to "package" being reserved in Groovy
+
+    public @Nullable String getPackageName() {
+        return getPackage();
+    }
+
+    public void setPackageName(@Nullable String pkg) {
+        setPackage(pkg);
+    }
+
     public void mixins(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_FIRST) Action<MixinClasses> action) {
         backend().configureList("mixins", action, MixinClasses.class, false);
     }

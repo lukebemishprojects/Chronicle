@@ -1,2 +1,2 @@
-dev.lukebemish.chronicle.gradle.dsl.FabricMixinInPlace
-dev.lukebemish.chronicle.gradle.dsl.NeoForgeMixinInPlace
+dev.lukebemish.chronicle.gradle.dsl.MixinClassesScan
+dev.lukebemish.chronicle.gradle.dsl.MixinClassesScanValidate

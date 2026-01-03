@@ -5,10 +5,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class ChronicleContext {
     private final ChronicleEngine<?> engine;
-    private final Map<ContextKey<?>, Object> contextData = new IdentityHashMap<>();
+    final Map<ContextKey<?>, Object> contextData = new IdentityHashMap<>();
 
     ChronicleContext(ChronicleEngine<?> engine) {
         this.engine = engine;
@@ -41,7 +42,7 @@ public final class ChronicleContext {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> @Nullable T getContextData(ContextKey<T> key) {
-        return (T) contextData.get(key);
+    public <T> T getContextData(ContextKey<T> key) {
+        return Objects.requireNonNull((T) contextData.get(key));
     }
 }

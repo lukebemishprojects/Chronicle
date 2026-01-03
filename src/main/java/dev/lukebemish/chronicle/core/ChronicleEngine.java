@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public final class ChronicleEngine<T> {
     private final ChronicleContext context;
@@ -42,7 +41,7 @@ public final class ChronicleEngine<T> {
         contextData.accept(new ContextDataBuilder() {
             @Override
             public <R> void add(ContextKey<R> key, R value) {
-                if (context.getContextData(key) != null) {
+                if (context.contextData.get(key) != null) {
                     throw new IllegalStateException("Context data for key " + key + " is already set");
                 }
                 context.setContextData(key, value);
@@ -70,7 +69,7 @@ public final class ChronicleEngine<T> {
 
                     @Override
                     public void requiresContextData(ContextKey<?> key) {
-                        var value = context.getContextData(key);
+                        var value = context.contextData.get(key);
                         if (value == null) {
                             throw new IllegalStateException("DSL " + dsl + " requires context data for key " + key + " but none was provided");
                         }

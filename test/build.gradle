@@ -4,6 +4,16 @@ plugins {
 }
 
 chronicle.forSourceSet("main") {
+    mixins("examplemod.mixins.json") {
+        minVersion = "0.8"
+        packageName = "test.mixin"
+        mixins {
+            scan()
+        }
+        client {
+            scan("subdirectory")
+        }
+    }
     fabric {
         id = "examplemod"
         version = "1.0.0"

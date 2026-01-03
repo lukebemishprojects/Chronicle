@@ -11,6 +11,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import javax.inject.Inject;
+import java.util.List;
 
 public abstract class ChronicleSourceSetExtension {
     private final TaskProvider<WriteChronicleTask> chronicleTask;
@@ -20,8 +21,11 @@ public abstract class ChronicleSourceSetExtension {
 
     public abstract Property<Boolean> getPrettyPrint();
 
+    public abstract Property<Boolean> getScanClasses();
+
     @Inject
     public ChronicleSourceSetExtension(SourceSet sourceSet) {
+        getScanClasses().convention(true);
         getPrettyPrint().convention(true);
         var chronicleDir = getProject().getLayout().getBuildDirectory().map(it -> it.dir("chronicle/"+sourceSet.getName()));
         sourceSet.getResources().srcDir(chronicleDir);
@@ -31,6 +35,16 @@ public abstract class ChronicleSourceSetExtension {
             t -> {
                 t.getOutputDirectory().set(chronicleDir);
                 t.getPrettyPrint().set(getPrettyPrint());
+                t.getClassScanPaths().from(getProject().provider(() -> {
+                    if (getScanClasses().get()) {
+                        return sourceSet.getOutput().getClassesDirs();
+                    } else {
+                        return List.of();
+                    }
+                }));
+                t.getScanClasses().set(getScanClasses());
+                // Set this up lazily to avoid a task dep if it isn't necessary
+                t.dependsOn(getScanClasses().map(it -> it ? sourceSet.getOutput().getClassesDirs() : List.of()));
             }
         );
         getProject().getTasks().named(sourceSet.getProcessResourcesTaskName(), ProcessResources.class, t -> {

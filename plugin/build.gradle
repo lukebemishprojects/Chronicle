@@ -103,6 +103,7 @@ dependencies {
         }
     }
     implementation(libs.toml4j)
+    implementation(libs.asm.tree)
 }
 
 tasks.named("jar", Jar) {
