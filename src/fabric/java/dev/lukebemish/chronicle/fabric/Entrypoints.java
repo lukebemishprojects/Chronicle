@@ -12,7 +12,7 @@ public class Entrypoints extends ValueConfigurableChronicleMap<Entrypoint, Strin
         super(backend);
     }
 
-    public void entrypoint(String key, @DelegatesTo(value = Entrypoint.class, strategy = Closure.DELEGATE_ONLY) Action<Entrypoint> action) {
+    public void entrypoint(String key, @DelegatesTo(value = Entrypoint.class, strategy = Closure.DELEGATE_FIRST) Action<Entrypoint> action) {
         this.configure(key, action);
     }
 

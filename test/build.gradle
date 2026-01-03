@@ -17,4 +17,18 @@ chronicle.forSourceSet("main") {
             add("othermod", ">=1.0.0")
         }
     }
+    neoForge {
+        license = "MIT"
+        mods.add {
+            modId = "examplemod"
+            version = "1.0.0"
+            displayName = "Example Mod"
+            description = "An example mod metadata using Chronicle"
+            authors = "Luke Bemish"
+            dependencies.add {
+                modId = "othermod"
+                versionRange = "[1.0.0,)"
+            }
+        }
+    }
 }

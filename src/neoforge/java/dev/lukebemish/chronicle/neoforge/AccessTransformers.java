@@ -11,7 +11,7 @@ public class AccessTransformers extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = AccessTransformer.class, strategy = Closure.DELEGATE_ONLY) Action<AccessTransformer> action) {
+    public void add(@DelegatesTo(value = AccessTransformer.class, strategy = Closure.DELEGATE_FIRST) Action<AccessTransformer> action) {
         backend().add(action, AccessTransformer.class, true);
     }
 }

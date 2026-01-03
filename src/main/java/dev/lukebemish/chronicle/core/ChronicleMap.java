@@ -17,9 +17,21 @@ public abstract class ChronicleMap implements Iterable<ChronicleMap.Entry> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends ChronicleMap> void validate(T map) {
+    protected static <T extends ChronicleMap> void validate(T map) {
         var validator = (MapValidator<T>) ((ChronicleMap) map).validator;
         validator.validate(map);
+    }
+
+    protected static <T extends ChronicleList> void validate(T list) {
+        ChronicleList.validate(list);
+    }
+
+    protected static BackendMap backend(ChronicleMap map) {
+        return map.backend;
+    }
+
+    protected static BackendList backend(ChronicleList list) {
+        return ChronicleList.backend(list);
     }
 
     protected BackendMap backend() {

@@ -2,12 +2,18 @@ package dev.lukebemish.chronicle.neoforge;
 
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendMap;
+import dev.lukebemish.chronicle.core.ChronicleList;
 import dev.lukebemish.chronicle.core.ChronicleMap;
 import dev.lukebemish.chronicle.core.DslValidate;
+import dev.lukebemish.chronicle.core.GenericChronicleList;
+import dev.lukebemish.chronicle.core.GenericChronicleMap;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class NeoForgeModsToml extends ChronicleMap {
@@ -55,7 +61,7 @@ public class NeoForgeModsToml extends ChronicleMap {
         backend().putAt("showAsDataPack", showAsDataPack);
     }
 
-    public void services(@DelegatesTo(value = Services.class, strategy = Closure.DELEGATE_ONLY) Action<Services> action) {
+    public void services(@DelegatesTo(value = Services.class, strategy = Closure.DELEGATE_FIRST) Action<Services> action) {
         backend().configureList("services", action, Services.class, false);
     }
 
@@ -64,7 +70,7 @@ public class NeoForgeModsToml extends ChronicleMap {
         return backend().getOrCreateList("services", Services.class);
     }
 
-    public void properties(@DelegatesTo(value = ReplacementProperties.class, strategy = Closure.DELEGATE_ONLY) Action<ReplacementProperties> action) {
+    public void properties(@DelegatesTo(value = ReplacementProperties.class, strategy = Closure.DELEGATE_FIRST) Action<ReplacementProperties> action) {
         backend().configure("properties", action, ReplacementProperties.class, false);
     }
 
@@ -81,7 +87,7 @@ public class NeoForgeModsToml extends ChronicleMap {
         backend().putAt("issueTrackerURL", issueTrackerURL);
     }
 
-    public void mods(@DelegatesTo(value = Mods.class, strategy = Closure.DELEGATE_ONLY) Action<Mods> action) {
+    public void mods(@DelegatesTo(value = Mods.class, strategy = Closure.DELEGATE_FIRST) Action<Mods> action) {
         backend().configureList("mods", action, Mods.class, false);
     }
 
@@ -108,16 +114,16 @@ public class NeoForgeModsToml extends ChronicleMap {
         backend().putAt("logoBlur", logoBlur);
     }
 
-    public void accessTransformers(@DelegatesTo(value = AccessTransformers.class, strategy = Closure.DELEGATE_ONLY) Action<AccessTransformers> action) {
+    public void accessTransformers(@DelegatesTo(value = AccessTransformers.class, strategy = Closure.DELEGATE_FIRST) Action<AccessTransformers> action) {
         backend().configureList("accessTransformers", action, AccessTransformers.class, false);
     }
 
-    @DslValidate
+    @DslValidate("accessTransformers")
     public AccessTransformers getAccessTransformers() {
         return backend().getOrCreateList("accessTransformers", AccessTransformers.class);
     }
 
-    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_ONLY) Action<Mixins> action) {
+    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
         backend().configureList("mixins", action, Mixins.class, false);
     }
 
@@ -139,6 +145,28 @@ public class NeoForgeModsToml extends ChronicleMap {
             }
             if (!Mod.LOGO_FILE.asMatchPredicate().test(logoString)) {
                 throw new IllegalStateException("Logo file name '" + logoString + "' is invalid; it must match the regex " + Mod.LOGO_FILE.pattern());
+            }
+        }
+
+        // Pull dependencies out of mod context to root context
+        var mods = map.get("mods");
+        if (mods instanceof GenericChronicleList list) {
+            for (var modObj : list) {
+                if (modObj instanceof GenericChronicleMap modMap) {
+                    var modDependencies = modMap.get("dependencies");
+                    if (modDependencies instanceof GenericChronicleList modDependenciesList) {
+                        var modId = modMap.get("modId");
+                        if (!(modId instanceof String modIdString)) {
+                            throw new IllegalStateException("Expected 'modId' to be present and a String in mod entry");
+                        }
+                        modMap.remove("dependencies");
+                        var dependencies = map.getOrCreate("dependencies", GenericChronicleMap.class);
+                        var depList = ChronicleMap.backend(dependencies).getOrCreateList(modIdString, GenericChronicleList.class);
+                        for (var dependencyObj : modDependenciesList) {
+                            ChronicleMap.backend(depList).add(dependencyObj);
+                        }
+                    }
+                }
             }
         }
     }

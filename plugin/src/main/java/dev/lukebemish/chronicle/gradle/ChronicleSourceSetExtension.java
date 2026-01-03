@@ -2,6 +2,7 @@ package dev.lukebemish.chronicle.gradle;
 
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.plugin.dsl.generated.dev.lukebemish.chronicle.fabric.FabricModJsonImpl;
+import dev.lukebemish.chronicle.plugin.dsl.generated.dev.lukebemish.chronicle.mixin.MixinConfigImpl;
 import dev.lukebemish.chronicle.plugin.dsl.generated.dev.lukebemish.chronicle.neoforge.NeoForgeModsTomlImpl;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -54,6 +55,39 @@ public abstract class ChronicleSourceSetExtension {
                 "META-INF/neoforge.mods.toml",
                 action,
                 NeoForgeModsTomlImpl.class,
+                new TomlSerializer()
+            ));
+        });
+    }
+
+    public void mixins(String name, Action<MixinConfigImpl> action) {
+        this.chronicleTask.configure(t -> {
+            t.getGenerationTasks().add(new GenerationTask<>(
+                name,
+                action,
+                MixinConfigImpl.class,
+                new JsonSerializer()
+            ));
+        });
+    }
+
+    public <T> void json(String name, Class<T> type, Action<T> action) {
+        this.chronicleTask.configure(t -> {
+            t.getGenerationTasks().add(new GenerationTask<>(
+                name,
+                action,
+                type,
+                new JsonSerializer()
+            ));
+        });
+    }
+
+    public <T> void toml(String name, Class<T> type, Action<T> action) {
+        this.chronicleTask.configure(t -> {
+            t.getGenerationTasks().add(new GenerationTask<>(
+                name,
+                action,
+                type,
                 new TomlSerializer()
             ));
         });

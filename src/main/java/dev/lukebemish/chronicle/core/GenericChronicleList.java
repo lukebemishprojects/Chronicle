@@ -8,11 +8,11 @@ public class GenericChronicleList extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+    public void add(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend.add(action, GenericChronicleMap.class, true);
     }
 
-    public void configure(int index, @DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+    public void configure(int index, @DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend.configure(index, action, GenericChronicleMap.class, true);
     }
 }

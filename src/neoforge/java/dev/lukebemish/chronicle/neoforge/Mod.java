@@ -81,7 +81,7 @@ public class Mod extends ChronicleMap {
         backend().putAt("updateJSONURL", updateJSONURL);
     }
 
-    public void features(@DelegatesTo(value = Features.class, strategy = Closure.DELEGATE_ONLY) Action<Features> action) {
+    public void features(@DelegatesTo(value = Features.class, strategy = Closure.DELEGATE_FIRST) Action<Features> action) {
         backend().configure("features", action, Features.class, false);
     }
 
@@ -90,7 +90,7 @@ public class Mod extends ChronicleMap {
         return backend().getOrCreate("features", Features.class);
     }
 
-    public void modProperties(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+    public void modProperties(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend().configure("modproperties", action, GenericChronicleMap.class, false);
     }
 
@@ -139,7 +139,7 @@ public class Mod extends ChronicleMap {
         backend().putAt("featureFlags", featureFlags);
     }
 
-    public void dependencies(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void dependencies(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configureList("dependencies", action, Dependencies.class, false);
     }
 

@@ -106,7 +106,7 @@ public class FabricModJson extends ChronicleMap {
         }
     }
 
-    public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_ONLY) Action<ContactInformation> action) {
+    public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {
         backend().configure("contact", action, ContactInformation.class, false);
     }
 
@@ -115,7 +115,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("contact", ContactInformation.class);
     }
 
-    public void authors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_ONLY) Action<People> action) {
+    public void authors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
         backend().configureList("authors", action, People.class, false);
     }
 
@@ -124,7 +124,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreateList("authors", People.class);
     }
 
-    public void contributors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_ONLY) Action<People> action) {
+    public void contributors(@DelegatesTo(value = People.class, strategy = Closure.DELEGATE_FIRST) Action<People> action) {
         backend().configureList("contributors", action, People.class, false);
     }
 
@@ -141,7 +141,7 @@ public class FabricModJson extends ChronicleMap {
         return (String) get("icon");
     }
 
-    public void icons(@DelegatesTo(value = Icons.class, strategy = Closure.DELEGATE_ONLY) Action<Icons> action) {
+    public void icons(@DelegatesTo(value = Icons.class, strategy = Closure.DELEGATE_FIRST) Action<Icons> action) {
         backend().configure("icon", action, Icons.class, false);
     }
 
@@ -150,7 +150,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("icon", Icons.class);
     }
 
-    public void jars(@DelegatesTo(value = NestedJarEntries.class, strategy = Closure.DELEGATE_ONLY) Action<NestedJarEntries> action) {
+    public void jars(@DelegatesTo(value = NestedJarEntries.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntries> action) {
         backend().configureList("jars", action, NestedJarEntries.class, false);
     }
 
@@ -159,7 +159,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreateList("jars", NestedJarEntries.class);
     }
 
-    public void entrypoints(@DelegatesTo(value = Entrypoints.class, strategy = Closure.DELEGATE_ONLY) Action<Entrypoints> action) {
+    public void entrypoints(@DelegatesTo(value = Entrypoints.class, strategy = Closure.DELEGATE_FIRST) Action<Entrypoints> action) {
         backend().configure("entrypoints", action, Entrypoints.class, false);
     }
 
@@ -168,7 +168,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("entrypoints", Entrypoints.class);
     }
 
-    public void languageAdapters(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+    public void languageAdapters(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend().configure("languageAdapters", action, GenericChronicleMap.class, false);
     }
 
@@ -177,7 +177,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("languageAdapters", GenericChronicleMap.class);
     }
 
-    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_ONLY) Action<Mixins> action) {
+    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
         backend().configureList("mixins", action, Mixins.class, false);
     }
 
@@ -194,7 +194,7 @@ public class FabricModJson extends ChronicleMap {
         backend().putAt("accessWidener", accessWidener);
     }
 
-    public void depends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void depends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configure("depends", action, Dependencies.class, false);
     }
 
@@ -203,7 +203,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("depends", Dependencies.class);
     }
 
-    public void recommends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void recommends(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configure("recommends", action, Dependencies.class, false);
     }
 
@@ -212,7 +212,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("recommends", Dependencies.class);
     }
 
-    public void suggests(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void suggests(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configure("suggests", action, Dependencies.class, false);
     }
 
@@ -221,7 +221,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("suggests", Dependencies.class);
     }
 
-    public void conflicts(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void conflicts(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configure("conflicts", action, Dependencies.class, false);
     }
 
@@ -230,7 +230,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("conflicts", Dependencies.class);
     }
 
-    public void breaks(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+    public void breaks(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_FIRST) Action<Dependencies> action) {
         backend().configure("breaks", action, Dependencies.class, false);
     }
 
@@ -239,7 +239,7 @@ public class FabricModJson extends ChronicleMap {
         return backend().getOrCreate("breaks", Dependencies.class);
     }
 
-    public void custom(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+    public void custom(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
         backend().configure("custom", action, GenericChronicleMap.class, false);
     }
 

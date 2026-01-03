@@ -40,7 +40,7 @@ public class MixinConfig extends ChronicleMap {
         backend().putAt("minVersion", minVersion);
     }
 
-    public void requiredFeatures(@DelegatesTo(value = RequiredFeatures.class, strategy = Closure.DELEGATE_ONLY) Action<RequiredFeatures> action) {
+    public void requiredFeatures(@DelegatesTo(value = RequiredFeatures.class, strategy = Closure.DELEGATE_FIRST) Action<RequiredFeatures> action) {
         backend().configureList("requiredFeatures", action, RequiredFeatures.class, false);
     }
 
@@ -89,7 +89,7 @@ public class MixinConfig extends ChronicleMap {
         backend().putAt("package", pkg);
     }
 
-    public void mixins(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_ONLY) Action<MixinClasses> action) {
+    public void mixins(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_FIRST) Action<MixinClasses> action) {
         backend().configureList("mixins", action, MixinClasses.class, false);
     }
 
@@ -98,7 +98,7 @@ public class MixinConfig extends ChronicleMap {
         return backend().getOrCreateList("mixins", MixinClasses.class);
     }
 
-    public void client(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_ONLY) Action<MixinClasses> action) {
+    public void client(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_FIRST) Action<MixinClasses> action) {
         backend().configureList("client", action, MixinClasses.class, false);
     }
 
@@ -107,7 +107,7 @@ public class MixinConfig extends ChronicleMap {
         return backend().getOrCreateList("client", MixinClasses.class);
     }
 
-    public void server(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_ONLY) Action<MixinClasses> action) {
+    public void server(@DelegatesTo(value = MixinClasses.class, strategy = Closure.DELEGATE_FIRST) Action<MixinClasses> action) {
         backend().configureList("server", action, MixinClasses.class, false);
     }
 
@@ -156,7 +156,7 @@ public class MixinConfig extends ChronicleMap {
         backend().putAt("plugin", plugin);
     }
 
-    public void injectors(@DelegatesTo(value = InjectorOptions.class, strategy = Closure.DELEGATE_ONLY) Action<InjectorOptions> action) {
+    public void injectors(@DelegatesTo(value = InjectorOptions.class, strategy = Closure.DELEGATE_FIRST) Action<InjectorOptions> action) {
         backend().configure("injectors", action, InjectorOptions.class, false);
     }
 
@@ -165,7 +165,7 @@ public class MixinConfig extends ChronicleMap {
         return backend().getOrCreate("injectors", InjectorOptions.class);
     }
 
-    public void overwrites(@DelegatesTo(value = OverwriteOptions.class, strategy = Closure.DELEGATE_ONLY) Action<OverwriteOptions> action) {
+    public void overwrites(@DelegatesTo(value = OverwriteOptions.class, strategy = Closure.DELEGATE_FIRST) Action<OverwriteOptions> action) {
         backend().configure("overwrites", action, OverwriteOptions.class, false);
     }
 

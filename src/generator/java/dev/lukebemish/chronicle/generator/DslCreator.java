@@ -699,7 +699,7 @@ public class DslCreator {
                             i, "Lgroovy/lang/DelegatesTo;", true
                         );
                         annotationVisitor.visit("value", Type.getType(simpleDescriptor));
-                        annotationVisitor.visit("strategy", 3);
+                        annotationVisitor.visit("strategy", 1);
                         annotationVisitor.visitEnd();
                     }
                 }

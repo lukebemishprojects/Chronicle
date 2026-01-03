@@ -14,7 +14,7 @@ public class Dependencies extends ChronicleMap {
         super(backend);
     }
 
-    public void add(String key, @DelegatesTo(value = Dependency.class, strategy = Closure.DELEGATE_ONLY) Action<Dependency> action) {
+    public void add(String key, @DelegatesTo(value = Dependency.class, strategy = Closure.DELEGATE_FIRST) Action<Dependency> action) {
         backend().configureList(key, action, Dependency.class, true);
     }
 

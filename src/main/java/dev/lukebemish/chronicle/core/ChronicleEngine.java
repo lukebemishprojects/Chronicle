@@ -307,7 +307,7 @@ public final class ChronicleEngine<T> {
                 }
                 queueToSearch.addAll(Arrays.asList(current.getInterfaces()));
             }
-            List<MapViewImpl.Validator> propertyValidators = new ArrayList<>();
+            List<Object> validators = new ArrayList<>();
             for (var declClazz : searched) {
                 for (var method : declClazz.getDeclaredMethods()) {
                     if (method.isAnnotationPresent(DslValidate.class)) {
@@ -344,7 +344,7 @@ public final class ChronicleEngine<T> {
                                         handle,
                                         handle.type()
                                     ).getTarget().invoke();
-                                    propertyValidators.add(new MapViewImpl.ListPropertyValidator<>(propertyGetter, annotation.value()));
+                                    validators.add(new MapViewImpl.ListPropertyValidator<>(propertyGetter, annotation.value()));
                                 } else if (ChronicleMap.class.isAssignableFrom(returnType)) {
                                     MapViewImpl.MapPropertyValidator.PropertyGetter<?> propertyGetter = (MapViewImpl.MapPropertyValidator.PropertyGetter<?>) LambdaMetafactory.metafactory(
                                         MethodHandles.lookup(),
@@ -354,7 +354,7 @@ public final class ChronicleEngine<T> {
                                         handle,
                                         handle.type()
                                     ).getTarget().invoke();
-                                    propertyValidators.add(new MapViewImpl.MapPropertyValidator<>(propertyGetter, annotation.value()));
+                                    validators.add(new MapViewImpl.MapPropertyValidator<>(propertyGetter, annotation.value()));
                                 } else {
                                     throw new IllegalStateException("@DslValidate method has invalid return type: " + method);
                                 }
@@ -369,7 +369,8 @@ public final class ChronicleEngine<T> {
             }
             Object validator = null;
             if (!validatorHandles.isEmpty()) {
-                var validators = validatorHandles.stream()
+                // Run all property validators _before_ root validators
+                validators.addAll(validatorHandles.stream()
                     .map(validatorHandle -> {
                         try {
                             var paramType = validatorHandle.type().parameterType(0);
@@ -386,8 +387,8 @@ public final class ChronicleEngine<T> {
                             throw new RuntimeException(e);
                         }
                     })
-                    .collect(Collectors.toCollection(ArrayList::new));
-                validators.addAll(propertyValidators);
+                    .toList()
+                );
                 if (backendType == BackendMap.class) {
                     validator = (MapViewImpl.Validator) map -> {
                         for (var v : validators) {

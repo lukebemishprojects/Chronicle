@@ -11,7 +11,7 @@ public class Foo extends ChronicleMap {
         super(backend);
     }
 
-    public void bar(@DelegatesTo(value = Bar.class, strategy = Closure.DELEGATE_ONLY) Action<Bar> action) {
+    public void bar(@DelegatesTo(value = Bar.class, strategy = Closure.DELEGATE_FIRST) Action<Bar> action) {
         backend().configure("bar", action, Bar.class, true);
     }
 }

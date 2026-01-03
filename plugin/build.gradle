@@ -90,7 +90,7 @@ dependencies {
             requireFeature("dsl")
         }
     }
-    implementation(libs.jtoml)
+    implementation(libs.toml4j)
 }
 
 tasks.named("jar", Jar) {

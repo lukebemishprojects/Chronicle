@@ -45,7 +45,7 @@ public class InjectorOptions extends ChronicleMap {
         backend().putAt("maxShiftBy", maxShiftBy);
     }
 
-    public void injectionPoints(@DelegatesTo(value = InjectionPoints.class, strategy = Closure.DELEGATE_ONLY) Action<InjectionPoints> action) {
+    public void injectionPoints(@DelegatesTo(value = InjectionPoints.class, strategy = Closure.DELEGATE_FIRST) Action<InjectionPoints> action) {
         backend().configureList("injectionPoints", action, InjectionPoints.class, false);
     }
 
@@ -54,7 +54,7 @@ public class InjectorOptions extends ChronicleMap {
         return backend().getOrCreateList("injectionPoints", InjectionPoints.class);
     }
 
-    public void dynamicSelectors(@DelegatesTo(value = DynamicSelectors.class, strategy = Closure.DELEGATE_ONLY) Action<DynamicSelectors> action) {
+    public void dynamicSelectors(@DelegatesTo(value = DynamicSelectors.class, strategy = Closure.DELEGATE_FIRST) Action<DynamicSelectors> action) {
         backend().configureList("dynamicSelectors", action, DynamicSelectors.class, false);
     }
 

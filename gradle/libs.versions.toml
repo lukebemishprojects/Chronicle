@@ -6,7 +6,7 @@ gradle = "9.2.1"
 jspecify = "1.0.0"
 jetbrains-annotations = "26.0.2"
 asm = "9.9"
-jtoml = "1.4.1"
+toml4j = "0.7.2"
 
 [libraries]
 
@@ -17,4 +17,4 @@ jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 asm-core = { module = "org.ow2.asm:asm", version.ref = "asm" }
 asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
-jtoml = { module = "io.github.wasabithumb:jtoml", version.ref = "jtoml" }
+toml4j = { module = "com.moandjiezana.toml:toml4j", version.ref = "toml4j" }

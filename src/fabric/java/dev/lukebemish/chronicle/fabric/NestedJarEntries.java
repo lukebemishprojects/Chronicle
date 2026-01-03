@@ -11,7 +11,7 @@ public class NestedJarEntries extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = NestedJarEntry.class, strategy = Closure.DELEGATE_ONLY) Action<NestedJarEntry> action) {
+    public void add(@DelegatesTo(value = NestedJarEntry.class, strategy = Closure.DELEGATE_FIRST) Action<NestedJarEntry> action) {
         backend().add(action, NestedJarEntry.class, true);
     }
 }

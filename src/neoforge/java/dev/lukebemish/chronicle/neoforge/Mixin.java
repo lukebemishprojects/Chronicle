@@ -31,7 +31,7 @@ public class Mixin extends ChronicleMap {
         backend().putAt("behaviorVersion", behaviorVersion);
     }
 
-    public void requiredMods(@DelegatesTo(value = MixinRequiredMods.class, strategy = Closure.DELEGATE_ONLY) Action<MixinRequiredMods> action) {
+    public void requiredMods(@DelegatesTo(value = MixinRequiredMods.class, strategy = Closure.DELEGATE_FIRST) Action<MixinRequiredMods> action) {
         backend().configureList("requiredMods", action, MixinRequiredMods.class, false);
     }
 

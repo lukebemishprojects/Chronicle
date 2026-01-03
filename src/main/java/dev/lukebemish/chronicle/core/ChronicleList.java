@@ -14,9 +14,21 @@ public abstract class ChronicleList implements Iterable<Object> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends ChronicleList> void validate(T map) {
-        var validator = (ListValidator<T>) ((ChronicleList) map).validator;
-        validator.validate(map);
+    protected static <T extends ChronicleList> void validate(T list) {
+        var validator = (ListValidator<T>) ((ChronicleList) list).validator;
+        validator.validate(list);
+    }
+
+    protected static <T extends ChronicleMap> void validate(T map) {
+        ChronicleMap.validate(map);
+    }
+
+    protected static BackendMap backend(ChronicleMap map) {
+        return ChronicleMap.backend(map);
+    }
+
+    protected static BackendList backend(ChronicleList list) {
+        return list.backend;
     }
 
     protected BackendList backend() {

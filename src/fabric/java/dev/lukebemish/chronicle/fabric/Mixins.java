@@ -11,7 +11,7 @@ public class Mixins extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = Mixin.class, strategy = Closure.DELEGATE_ONLY) Action<Mixin> action) {
+    public void add(@DelegatesTo(value = Mixin.class, strategy = Closure.DELEGATE_FIRST) Action<Mixin> action) {
         this.backend().add(action, Mixin.class, true);
     }
 }

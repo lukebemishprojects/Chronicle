@@ -11,7 +11,7 @@ public class Dependencies extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = Dependency.class, strategy = Closure.DELEGATE_ONLY) Action<Dependency> action) {
+    public void add(@DelegatesTo(value = Dependency.class, strategy = Closure.DELEGATE_FIRST) Action<Dependency> action) {
         backend().add(action, Dependency.class, true);
     }
 }
