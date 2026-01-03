@@ -1,3 +1,5 @@
+import build.RunGeneratorTask
+
 plugins {
     id 'org.jetbrains.kotlin.jvm'
     id 'java-library'
@@ -33,10 +35,6 @@ java {
         withSourcesJar()
         withJavadocJar()
     }
-    registerFeature("pluginDsl") {
-        usingSourceSet(sourceSets.create("pluginDsl"))
-        disablePublication()
-    }
     registerFeature("testGeneratorMixin") {
         usingSourceSet(sourceSets.create("testGeneratorMixin"))
         disablePublication()
@@ -57,28 +55,6 @@ dependencies {
         }
     }
     compileOnly(libs.kotlin.stdlib)
-
-    pluginDslImplementation(project(":")) {
-        capabilities {
-            requireFeature("fabric")
-        }
-    }
-    pluginDslImplementation(project(":")) {
-        capabilities {
-            requireFeature("neoforge")
-        }
-    }
-    pluginDslImplementation(project(":")) {
-        capabilities {
-            requireFeature("mixin")
-        }
-    }
-    pluginDslCompileOnly(libs.gradle) {
-        capabilities {
-            requireFeature "internal"
-        }
-    }
-    pluginDslCompileOnly(libs.kotlin.stdlib)
 
     fabricApi(project(":"))
     fabricCompileOnly(libs.groovy)
@@ -115,50 +91,7 @@ tasks.named("generatorJar", Jar) {
     )
 }
 
-abstract class RunGeneratorTask extends DefaultTask {
-    @OutputDirectory
-    abstract DirectoryProperty getOutputDirectory()
-
-    @Input
-    abstract ListProperty<String> getEntrypoints()
-
-    @Classpath
-    @InputFiles
-    abstract ConfigurableFileCollection getGeneratorClasspath()
-
-    @Classpath
-    @InputFiles
-    abstract ConfigurableFileCollection getDslClasspath()
-
-    @Input
-    abstract Property<String> getOutputPackage()
-
-    @Inject
-    protected abstract ExecOperations getExecOperations()
-
-    @TaskAction
-    void run() {
-        if (outputDirectory.get().asFile.exists()) {
-            outputDirectory.get().asFile.deleteDir()
-        }
-        execOperations.javaexec {
-            classpath = generatorClasspath
-            mainClass.set("dev.lukebemish.chronicle.generator.DslCreator")
-            def runArgs = [
-                "-o", outputDirectory.get().asFile.absolutePath,
-                "--package", outputPackage.get(),
-                "-cp", dslClasspath.asPath
-            ]
-            for (String entrypoint : entrypoints.get()) {
-                runArgs.add("--entrypoint")
-                runArgs.add(entrypoint)
-            }
-            args = runArgs
-        }.rethrowFailure().assertNormalExitValue()
-    }
-}
-
-tasks.register('runTestGenerator', RunGeneratorTask) {
+def runTestGenerator = tasks.register('runTestGenerator', RunGeneratorTask) {
     generatorClasspath.from(configurations.generatorRuntimeClasspath)
     generatorClasspath.from(tasks.generatorJar)
     dslClasspath.from(configurations.testGeneratorMixinRuntimeClasspath)
@@ -168,20 +101,8 @@ tasks.register('runTestGenerator', RunGeneratorTask) {
     entrypoints.add("test.generator.target.Root")
 }
 
-tasks.register('runPluginDslGenerator', RunGeneratorTask) {
-    generatorClasspath.from(configurations.generatorRuntimeClasspath)
-    generatorClasspath.from(tasks.generatorJar)
-    dslClasspath.from(configurations.pluginDslRuntimeClasspath)
-    dslClasspath.from(tasks.pluginDslJar)
-    outputDirectory = layout.buildDirectory.dir("generated/plugin-dsl")
-    outputPackage = "dev.lukebemish.chronicle.plugin.dsl.generated"
-    entrypoints.add("dev.lukebemish.chronicle.fabric.FabricModJson")
-    entrypoints.add("dev.lukebemish.chronicle.neoforge.NeoforgeModsToml")
-    entrypoints.add("dev.lukebemish.chronicle.mixin.MixinConfig")
-}
-
 dependencies {
-    testGeneratorUsageImplementation(files(tasks.named('runTestGenerator', RunGeneratorTask).flatMap { it.outputDirectory }))
+    testGeneratorUsageImplementation(files(runTestGenerator.flatMap { it.outputDirectory }))
     testGeneratorUsageImplementation(project(":")) {
         capabilities {
             requireFeature("test-generator-mixin")

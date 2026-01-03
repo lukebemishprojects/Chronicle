@@ -699,7 +699,7 @@ public class DslCreator {
                             i, "Lgroovy/lang/DelegatesTo;", true
                         );
                         annotationVisitor.visit("value", Type.getType(simpleDescriptor));
-                        annotationVisitor.visit("strategy", 1); // Closure.DELEGATE_FIRST
+                        annotationVisitor.visit("strategy", 3);
                         annotationVisitor.visitEnd();
                     }
                 }
@@ -718,7 +718,11 @@ public class DslCreator {
                     false
                 );
                 var returnType = Type.getType(newDescriptor.toString()).getReturnType();
-                if (returnType.equals(Type.VOID_TYPE)) {
+                var oldReturnType = Type.getType(oldDescriptor.toString()).getReturnType();
+                if (!returnType.equals(oldReturnType)) {
+                    methodNode.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
+                    methodNode.visitInsn(Opcodes.ARETURN);
+                } else if (returnType.equals(Type.VOID_TYPE)) {
                     methodNode.visitInsn(Opcodes.RETURN);
                 } else {
                     methodNode.visitInsn(returnType.getOpcode(Opcodes.IRETURN));

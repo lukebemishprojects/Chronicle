@@ -1,0 +1,107 @@
+import build.RunGeneratorTask
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'java-library'
+    id 'maven-publish'
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+group = 'dev.lukebemish.chronicle'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+    withJavadocJar()
+    registerFeature("dsl") {
+        usingSourceSet(sourceSets.create("dsl"))
+        disablePublication()
+    }
+}
+
+gradlePlugin {
+    plugins {
+        register("chronicle") {
+            id = "dev.lukebemish.chronicle"
+            implementationClass = "dev.lukebemish.chronicle.gradle.ChroniclePlugin"
+        }
+    }
+}
+
+configurations {
+    def generator = dependencyScope("generator")
+    resolvable("generatorClasspath") {
+        extendsFrom(generator.get())
+    }
+
+    def dsl = dependencyScope("dsl")
+    named("dslImplementation") {
+        extendsFrom(dsl.get())
+    }
+    named("api") {
+        extendsFrom(dsl.get())
+    }
+}
+
+def runDslGenerator = tasks.register('runDslGenerator', RunGeneratorTask) {
+    generatorClasspath.from(configurations.generatorClasspath)
+    dslClasspath.from(configurations.dslRuntimeClasspath)
+    dslClasspath.from(tasks.dslJar)
+    outputDirectory = layout.buildDirectory.dir("generated/plugin-dsl")
+    outputPackage = "dev.lukebemish.chronicle.plugin.dsl.generated"
+    entrypoints.add("dev.lukebemish.chronicle.fabric.FabricModJson")
+    entrypoints.add("dev.lukebemish.chronicle.neoforge.NeoForgeModsToml")
+    entrypoints.add("dev.lukebemish.chronicle.mixin.MixinConfig")
+}
+
+dependencies {
+    generator(project(":")) {
+        capabilities {
+            requireFeature("generator")
+        }
+    }
+
+    dsl(project(":")) {
+        capabilities {
+            requireFeature("fabric")
+        }
+    }
+    dsl(project(":")) {
+        capabilities {
+            requireFeature("neoforge")
+        }
+    }
+    dsl(project(":")) {
+        capabilities {
+            requireFeature("mixin")
+        }
+    }
+    dslCompileOnly(libs.gradle) {
+        capabilities {
+            requireFeature "internal"
+        }
+    }
+    dslCompileOnly(libs.kotlin.stdlib)
+
+    compileOnly(files(runDslGenerator.flatMap { it.outputDirectory }))
+    implementation(project(project.path)) {
+        capabilities {
+            requireFeature("dsl")
+        }
+    }
+    implementation(libs.jtoml)
+}
+
+tasks.named("jar", Jar) {
+    dependsOn(runDslGenerator)
+    from(runDslGenerator.flatMap { it.outputDirectory })
+}
+
+kotlin {
+    jvmToolchain(21)
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+        freeCompilerArgs.add("-no-stdlib")
+    }
+}

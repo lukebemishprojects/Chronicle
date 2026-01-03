@@ -1,6 +1,5 @@
 package dev.lukebemish.chronicle.core;
 
-import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
 
@@ -14,12 +13,14 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public final class ChronicleEngine<T> {
     private final ChronicleContext context;
@@ -33,7 +34,7 @@ public final class ChronicleEngine<T> {
     }
 
     public ChronicleEngine(Class<T> clazz, Consumer<ContextDataBuilder> contextData) {
-        List<Class<? extends ChronicleDsl>> dsls = new ArrayList<>();
+        Deque<Class<? extends ChronicleDsl>> dsls = new ArrayDeque<>();
         if (clazz.isAnnotationPresent(RequiresDsl.class)) {
             dsls.addAll(Arrays.asList(clazz.getAnnotation(RequiresDsl.class).value()));
         }
@@ -48,8 +49,8 @@ public final class ChronicleEngine<T> {
             }
         });
 
-        for (var dsl : dsls) {
-            // TODO: handle parent plugins being able to re-apply impl classes set up by child plugins
+        while (!dsls.isEmpty()) {
+            var dsl = dsls.removeFirst();
             if (!dslPlugins.add(dsl)) {
                 continue;
             }
@@ -88,7 +89,7 @@ public final class ChronicleEngine<T> {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public Object execute(@DelegatesTo(type = "T", strategy = Closure.DELEGATE_FIRST) Action<T> action) {
+    public Object execute(@DelegatesTo(type = "T") Action<T> action) {
         return switch (view) {
             case MapView<?> mapView -> executeMap(mapView, (Action) action);
             case ListView<?> listView -> executeList(listView, (Action) action);
@@ -99,7 +100,7 @@ public final class ChronicleEngine<T> {
         var backend = new BackendList(context);
         var dsl = listView.wrap(backend);
         action.call(dsl);
-        listView.validate(backend);
+        listView.validate(dsl);
         return backend.convert();
     }
 
@@ -107,7 +108,7 @@ public final class ChronicleEngine<T> {
         var backend = new BackendMap(context);
         var dsl = mapView.wrap(backend);
         action.call(dsl);
-        mapView.validate(backend);
+        mapView.validate(dsl);
         return backend.convert();
     }
 
@@ -159,13 +160,11 @@ public final class ChronicleEngine<T> {
         return baseClazz;
     }
 
-    private static final class MapViewImpl<T extends ChronicleMap> implements MapView<T> {
-        private final Wrapper<T> wrapper;
-        private final Validator validator;
-
-        MapViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
+    private record MapViewImpl<T extends ChronicleMap>(Wrapper<T> wrapper, Validator validator) implements MapView<T> {
+        private MapViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
             this.wrapper = wrapper;
-            this.validator = validator == null ? it -> {} : validator;
+            this.validator = validator == null ? it -> {
+            } : validator;
         }
 
         @Override
@@ -174,12 +173,47 @@ public final class ChronicleEngine<T> {
         }
 
         @Override
-        public void validate(BackendMap map) {
+        public void validate(T map) {
             validator.validate(map);
         }
 
         private interface Validator {
+            void validate(ChronicleMap map);
+        }
+
+        private interface BackendValidator extends Validator {
             void validate(BackendMap map);
+
+            @Override
+            default void validate(ChronicleMap map) {
+                validate(map.backend());
+            }
+        }
+
+        private record MapPropertyValidator<T extends ChronicleMap>(PropertyGetter<T> getter, String property) implements Validator {
+            interface PropertyGetter<T extends ChronicleMap> {
+                T get(ChronicleMap map);
+            }
+
+            @Override
+            public void validate(ChronicleMap map) {
+                if (map.backend().get(property) != null) {
+                    ChronicleMap.validate(getter.get(map));
+                }
+            }
+        }
+
+        private record ListPropertyValidator<T extends ChronicleList>(PropertyGetter<T> getter, String property) implements Validator {
+            interface PropertyGetter<T extends ChronicleList> {
+                T get(ChronicleMap map);
+            }
+
+            @Override
+            public void validate(ChronicleMap map) {
+                if (map.backend().get(property) != null) {
+                    ChronicleList.validate(getter.get(map));
+                }
+            }
         }
 
         private interface Wrapper<T extends ChronicleMap> {
@@ -187,13 +221,12 @@ public final class ChronicleEngine<T> {
         }
     }
 
-    private static final class ListViewImpl<T extends ChronicleList> implements ListView<T> {
-        private final Wrapper<T> wrapper;
-        private final Validator validator;
-
-        ListViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
+    private record ListViewImpl<T extends ChronicleList>(Wrapper<T> wrapper,
+                                                         Validator validator) implements ListView<T> {
+        private ListViewImpl(Wrapper<T> wrapper, @Nullable Validator validator) {
             this.wrapper = wrapper;
-            this.validator = validator == null ? it -> {} : validator;
+            this.validator = validator == null ? it -> {
+            } : validator;
         }
 
         @Override
@@ -202,12 +235,21 @@ public final class ChronicleEngine<T> {
         }
 
         @Override
-        public void validate(BackendList list) {
+        public void validate(T list) {
             validator.validate(list);
         }
 
         private interface Validator {
+            void validate(ChronicleList list);
+        }
+
+        private interface BackendValidator extends Validator {
             void validate(BackendList list);
+
+            @Override
+            default void validate(ChronicleList list) {
+                validate(list.backend());
+            }
         }
 
         private interface Wrapper<T extends ChronicleList> {
@@ -230,14 +272,17 @@ public final class ChronicleEngine<T> {
             Class<?> baseType;
             Class<?> wrapperType;
             Class<?> validatorType;
+            Class<?> backendValidatorType;
             if (backendType == BackendMap.class) {
                 baseType = ChronicleMap.class;
                 wrapperType = MapViewImpl.Wrapper.class;
                 validatorType = MapViewImpl.Validator.class;
+                backendValidatorType = MapViewImpl.BackendValidator.class;
             } else {
                 baseType = ChronicleList.class;
                 wrapperType = ListViewImpl.Wrapper.class;
                 validatorType = ListViewImpl.Validator.class;
+                backendValidatorType = ListViewImpl.BackendValidator.class;
             }
             var wrapper = LambdaMetafactory.metafactory(
                 MethodHandles.lookup(),
@@ -262,17 +307,59 @@ public final class ChronicleEngine<T> {
                 }
                 queueToSearch.addAll(Arrays.asList(current.getInterfaces()));
             }
+            List<MapViewImpl.Validator> propertyValidators = new ArrayList<>();
             for (var declClazz : searched) {
                 for (var method : declClazz.getDeclaredMethods()) {
                     if (method.isAnnotationPresent(DslValidate.class)) {
                         if (method.getParameterCount() == 1 &&
                             method.getReturnType() == void.class &&
-                            method.getParameterTypes()[0] == backendType
+                            (method.getParameterTypes()[0].isAssignableFrom(clazz) || method.getParameterTypes()[0] == backendType)
                         ) {
                             if (Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers())) {
-                                validatorHandles.add(MethodHandles.lookup().unreflect(method));
+                                var handle = MethodHandles.lookup().unreflect(method);
+                                validatorHandles.add(handle);
                             } else {
                                 throw new IllegalStateException("@DslValidate method must be static: " + method);
+                            }
+                        } else if (method.getParameterCount() == 0 && method.getReturnType() != void.class) {
+                            var annotation = method.getAnnotation(DslValidate.class);
+                            if (annotation.value().isEmpty()) {
+                                throw new IllegalStateException("@DslValidate method must specify property name when used as instance method: " + method);
+                            }
+                            if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
+                                throw new IllegalStateException("@DslValidate method without args must be an instance method: " + method);
+                            }
+                            if (backendType == BackendList.class) {
+                                throw new IllegalStateException("@DslValidate instance method cannot be used in ListView: " + method);
+                            }
+                            var returnType = method.getReturnType();
+                            var handle = MethodHandles.lookup().unreflect(method);
+                            try {
+                                if (ChronicleList.class.isAssignableFrom(returnType)) {
+                                    MapViewImpl.ListPropertyValidator.PropertyGetter<?> propertyGetter = (MapViewImpl.ListPropertyValidator.PropertyGetter<?>) LambdaMetafactory.metafactory(
+                                        MethodHandles.lookup(),
+                                        "get",
+                                        MethodType.methodType(MapViewImpl.ListPropertyValidator.PropertyGetter.class),
+                                        MethodType.methodType(ChronicleList.class, ChronicleMap.class),
+                                        handle,
+                                        handle.type()
+                                    ).getTarget().invoke();
+                                    propertyValidators.add(new MapViewImpl.ListPropertyValidator<>(propertyGetter, annotation.value()));
+                                } else if (ChronicleMap.class.isAssignableFrom(returnType)) {
+                                    MapViewImpl.MapPropertyValidator.PropertyGetter<?> propertyGetter = (MapViewImpl.MapPropertyValidator.PropertyGetter<?>) LambdaMetafactory.metafactory(
+                                        MethodHandles.lookup(),
+                                        "get",
+                                        MethodType.methodType(MapViewImpl.MapPropertyValidator.PropertyGetter.class),
+                                        MethodType.methodType(ChronicleMap.class, ChronicleMap.class),
+                                        handle,
+                                        handle.type()
+                                    ).getTarget().invoke();
+                                    propertyValidators.add(new MapViewImpl.MapPropertyValidator<>(propertyGetter, annotation.value()));
+                                } else {
+                                    throw new IllegalStateException("@DslValidate method has invalid return type: " + method);
+                                }
+                            } catch (Throwable e) {
+                                throw new RuntimeException(e);
                             }
                         } else {
                             throw new IllegalStateException("@DslValidate method has invalid signature: " + method);
@@ -285,19 +372,22 @@ public final class ChronicleEngine<T> {
                 var validators = validatorHandles.stream()
                     .map(validatorHandle -> {
                         try {
+                            var paramType = validatorHandle.type().parameterType(0);
+                            var usesBackendValidator = paramType == backendType;
                             return LambdaMetafactory.metafactory(
                                 MethodHandles.lookup(),
                                 "validate",
-                                MethodType.methodType(validatorType),
-                                MethodType.methodType(void.class, backendType),
+                                MethodType.methodType(usesBackendValidator ? backendValidatorType : validatorType),
+                                MethodType.methodType(void.class, usesBackendValidator ? backendType : baseType),
                                 validatorHandle,
-                                MethodType.methodType(void.class, backendType)
+                                validatorHandle.type()
                             ).dynamicInvoker().invoke();
                         } catch (Throwable e) {
                             throw new RuntimeException(e);
                         }
                     })
-                    .toList();
+                    .collect(Collectors.toCollection(ArrayList::new));
+                validators.addAll(propertyValidators);
                 if (backendType == BackendMap.class) {
                     validator = (MapViewImpl.Validator) map -> {
                         for (var v : validators) {

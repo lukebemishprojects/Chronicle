@@ -9,9 +9,17 @@ import java.util.Map;
 
 public abstract class ChronicleMap implements Iterable<ChronicleMap.Entry> {
     final BackendMap backend;
+    private final MapValidator<?> validator;
 
     public ChronicleMap(BackendMap backend) {
         this.backend = backend;
+        this.validator = backend.context().mapView(getClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends ChronicleMap> void validate(T map) {
+        var validator = (MapValidator<T>) ((ChronicleMap) map).validator;
+        validator.validate(map);
     }
 
     protected BackendMap backend() {

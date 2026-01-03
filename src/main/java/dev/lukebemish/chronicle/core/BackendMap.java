@@ -39,9 +39,10 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
 
             @Override
             public ChronicleMap.Entry next() {
+                var next = backingIterator.next();
                 return new ChronicleMap.Entry(
-                    backingIterator.next().getKey(),
-                    context.wrap(backingIterator.next().getValue())
+                    next.getKey(),
+                    context.wrap(next.getValue())
                 );
             }
         };
@@ -67,7 +68,7 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
         }
     }
 
-    public <T extends ChronicleMap> void configure(String key, Action<T> action, Class<T> viewClass) {
+    public <T extends ChronicleMap> void configure(String key, Action<T> action, Class<T> viewClass, boolean validate) {
         var existing = Utils.unwrap(get(key));
         BackendMap map;
         if (existing instanceof BackendMap existingMap) {
@@ -81,10 +82,27 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
         var view = context.mapView(viewClass);
         T wrapped = view.wrap(map);
         action.call(wrapped);
-        view.validate(map);
+        if (validate) {
+            view.validate(wrapped);
+        }
     }
 
-    public <T extends ChronicleList> void configureList(String key, Action<T> action, Class<T> viewClass) {
+    public <T extends ChronicleMap> T getOrCreate(String key, Class<T> viewClass) {
+        var existing = Utils.unwrap(get(key));
+        BackendMap map;
+        if (existing instanceof BackendMap existingMap) {
+            map = existingMap;
+        } else if (existing != null) {
+            throw new IllegalStateException("Cannot get key '" + key + "' because it is already set to a non-map value");
+        } else {
+            map = new BackendMap(this.context);
+            backend.put(key, map);
+        }
+        var view = context.mapView(viewClass);
+        return view.wrap(map);
+    }
+
+    public <T extends ChronicleList> void configureList(String key, Action<T> action, Class<T> viewClass, boolean validate) {
         var existing = Utils.unwrap(get(key));
         BackendList list;
         if (existing instanceof BackendList existingList) {
@@ -98,10 +116,27 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
         var view = context.listView(viewClass);
         var wrapped = view.wrap(list);
         action.call(wrapped);
-        view.validate(list);
+        if (validate) {
+            view.validate(wrapped);
+        }
     }
 
-    public <T extends ChronicleMap> void add(String key, Action<T> mapAction, Class<T> viewClass) {
+    public <T extends ChronicleList> T getOrCreateList(String key, Class<T> viewClass) {
+        var existing = Utils.unwrap(get(key));
+        BackendList list;
+        if (existing instanceof BackendList existingList) {
+            list = existingList;
+        } else if (existing != null) {
+            throw new IllegalStateException("Cannot get key '" + key + "' because it is already set to a non-list value");
+        } else {
+            list = new BackendList(this.context);
+            backend.put(key, list);
+        }
+        var view = context.listView(viewClass);
+        return view.wrap(list);
+    }
+
+    public <T extends ChronicleMap> void add(String key, Action<T> mapAction, Class<T> viewClass, boolean validate) {
         var existing = Utils.unwrap(get(key));
         BackendList list;
         if (existing instanceof BackendList existingList) {
@@ -112,7 +147,7 @@ public final class BackendMap implements Iterable<ChronicleMap.Entry> {
             list = new BackendList(this.context);
             backend.put(key, list);
         }
-        list.add(mapAction, viewClass);
+        list.add(mapAction, viewClass, validate);
     }
 
     @Override

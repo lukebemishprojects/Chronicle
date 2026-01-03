@@ -22,8 +22,13 @@ public class Person extends ChronicleMap {
         putAt("name", name);
     }
 
-    public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_FIRST) Action<ContactInformation> action) {
-        backend().configure("contact", action, ContactInformation.class);
+    public void contact(@DelegatesTo(value = ContactInformation.class, strategy = Closure.DELEGATE_ONLY) Action<ContactInformation> action) {
+        backend().configure("contact", action, ContactInformation.class, false);
+    }
+
+    @DslValidate("contact")
+    public ContactInformation getContact() {
+        return backend().getOrCreate("contact", ContactInformation.class);
     }
 
     @DslValidate

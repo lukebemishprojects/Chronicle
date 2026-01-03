@@ -1,0 +1,20 @@
+plugins {
+    id "java"
+    id "dev.lukebemish.chronicle"
+}
+
+chronicle.forSourceSet("main") {
+    fabric {
+        id = "examplemod"
+        version = "1.0.0"
+        name = "Example Mod"
+        description = "An example mod metadata using Chronicle"
+        authors {
+            add("Luke Bemish")
+        }
+        license = "MIT"
+        depends {
+            add("othermod", ">=1.0.0")
+        }
+    }
+}

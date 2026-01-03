@@ -11,7 +11,7 @@ public class Mods extends ChronicleList {
         super(backend);
     }
 
-    public void add(@DelegatesTo(value = Mod.class, strategy = Closure.DELEGATE_FIRST) Action<Mod> action) {
-        backend().add(action, Mod.class);
+    public void add(@DelegatesTo(value = Mod.class, strategy = Closure.DELEGATE_ONLY) Action<Mod> action) {
+        backend().add(action, Mod.class, true);
     }
 }

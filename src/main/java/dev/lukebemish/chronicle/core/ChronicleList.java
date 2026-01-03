@@ -6,9 +6,17 @@ import java.util.Map;
 
 public abstract class ChronicleList implements Iterable<Object> {
     final BackendList backend;
+    private final ListValidator<?> validator;
 
     public ChronicleList(BackendList backend) {
         this.backend = backend;
+        this.validator = backend.context().listView(getClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends ChronicleList> void validate(T map) {
+        var validator = (ListValidator<T>) ((ChronicleList) map).validator;
+        validator.validate(map);
     }
 
     protected BackendList backend() {

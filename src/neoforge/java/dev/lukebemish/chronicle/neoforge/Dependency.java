@@ -33,7 +33,7 @@ public class Dependency extends ChronicleMap {
         if (type == null) {
             return null;
         }
-        return DependencyType.forValue(type);
+        return dev.lukebemish.chronicle.neoforge.DependencyType.forValue(type);
     }
 
     public void setType(@Nullable DependencyType type) {
@@ -53,7 +53,7 @@ public class Dependency extends ChronicleMap {
         if (ordering == null) {
             return null;
         }
-        return Ordering.forValue(ordering);
+        return dev.lukebemish.chronicle.neoforge.Ordering.forValue(ordering);
     }
 
     public void setOrdering(@Nullable Ordering ordering) {
@@ -65,7 +65,7 @@ public class Dependency extends ChronicleMap {
         if (side == null) {
             return null;
         }
-        return Side.forValue(side);
+        return dev.lukebemish.chronicle.neoforge.Side.forValue(side);
     }
 
     public void setSide(@Nullable Side side) {

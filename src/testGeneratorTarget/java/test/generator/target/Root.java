@@ -11,7 +11,7 @@ public class Root extends ChronicleMap {
         super(backend);
     }
 
-    public void foo(@DelegatesTo(value = Foo.class, strategy = Closure.DELEGATE_FIRST) Action<Foo> action) {
-        backend().configure("foo", action, Foo.class);
+    public void foo(@DelegatesTo(value = Foo.class, strategy = Closure.DELEGATE_ONLY) Action<Foo> action) {
+        backend().configure("foo", action, Foo.class, true);
     }
 }

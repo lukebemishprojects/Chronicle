@@ -3,6 +3,7 @@ package dev.lukebemish.chronicle.mixin;
 import dev.lukebemish.chronicle.core.Action;
 import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
+import dev.lukebemish.chronicle.core.DslValidate;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
@@ -44,11 +45,21 @@ public class InjectorOptions extends ChronicleMap {
         backend().putAt("maxShiftBy", maxShiftBy);
     }
 
-    public void injectionPoints(@DelegatesTo(value = InjectionPoints.class, strategy = Closure.DELEGATE_FIRST) Action<InjectionPoints> action) {
-        backend().configureList("injectionPoints", action, InjectionPoints.class);
+    public void injectionPoints(@DelegatesTo(value = InjectionPoints.class, strategy = Closure.DELEGATE_ONLY) Action<InjectionPoints> action) {
+        backend().configureList("injectionPoints", action, InjectionPoints.class, false);
     }
 
-    public void dynamicSelectors(@DelegatesTo(value = DynamicSelectors.class, strategy = Closure.DELEGATE_FIRST) Action<DynamicSelectors> action) {
-        backend().configureList("dynamicSelectors", action, DynamicSelectors.class);
+    @DslValidate("injectionPoints")
+    public InjectionPoints getInjectionPoints() {
+        return backend().getOrCreateList("injectionPoints", InjectionPoints.class);
+    }
+
+    public void dynamicSelectors(@DelegatesTo(value = DynamicSelectors.class, strategy = Closure.DELEGATE_ONLY) Action<DynamicSelectors> action) {
+        backend().configureList("dynamicSelectors", action, DynamicSelectors.class, false);
+    }
+
+    @DslValidate("dynamicSelectors")
+    public DynamicSelectors getDynamicSelectors() {
+        return backend().getOrCreateList("dynamicSelectors", DynamicSelectors.class);
     }
 }

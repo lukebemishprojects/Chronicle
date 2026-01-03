@@ -10,8 +10,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
-public class NeoforgeModsToml extends ChronicleMap {
-    public NeoforgeModsToml(BackendMap backend) {
+public class NeoForgeModsToml extends ChronicleMap {
+    public NeoForgeModsToml(BackendMap backend) {
         super(backend);
     }
 
@@ -55,12 +55,22 @@ public class NeoforgeModsToml extends ChronicleMap {
         backend().putAt("showAsDataPack", showAsDataPack);
     }
 
-    public void services(@DelegatesTo(value = Services.class, strategy = Closure.DELEGATE_FIRST) Action<Services> action) {
-        backend().configureList("services", action, Services.class);
+    public void services(@DelegatesTo(value = Services.class, strategy = Closure.DELEGATE_ONLY) Action<Services> action) {
+        backend().configureList("services", action, Services.class, false);
     }
 
-    public void properties(@DelegatesTo(value = ReplacementProperties.class, strategy = Closure.DELEGATE_FIRST) Action<ReplacementProperties> action) {
-        backend().configure("properties", action, ReplacementProperties.class);
+    @DslValidate("services")
+    public Services getServices() {
+        return backend().getOrCreateList("services", Services.class);
+    }
+
+    public void properties(@DelegatesTo(value = ReplacementProperties.class, strategy = Closure.DELEGATE_ONLY) Action<ReplacementProperties> action) {
+        backend().configure("properties", action, ReplacementProperties.class, false);
+    }
+
+    @DslValidate("properties")
+    public ReplacementProperties getProperties() {
+        return backend().getOrCreate("properties", ReplacementProperties.class);
     }
 
     public @Nullable String getIssueTrackerUrl() {
@@ -71,8 +81,13 @@ public class NeoforgeModsToml extends ChronicleMap {
         backend().putAt("issueTrackerURL", issueTrackerURL);
     }
 
-    public void mods(@DelegatesTo(value = Mods.class, strategy = Closure.DELEGATE_FIRST) Action<Mods> action) {
-        backend().configureList("mods", action, Mods.class);
+    public void mods(@DelegatesTo(value = Mods.class, strategy = Closure.DELEGATE_ONLY) Action<Mods> action) {
+        backend().configureList("mods", action, Mods.class, false);
+    }
+
+    @DslValidate("mods")
+    public Mods getMods() {
+        return backend().getOrCreateList("mods", Mods.class);
     }
 
     // These seem to be allowed from the root neoforge.mods.toml file as well:
@@ -93,16 +108,27 @@ public class NeoforgeModsToml extends ChronicleMap {
         backend().putAt("logoBlur", logoBlur);
     }
 
-    public void accessTransformers(@DelegatesTo(value = AccessTransformers.class, strategy = Closure.DELEGATE_FIRST) Action<AccessTransformers> action) {
-        backend().configureList("accessTransformers", action, AccessTransformers.class);
-    }
-
-    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_FIRST) Action<Mixins> action) {
-        backend().configureList("mixins", action, Mixins.class);
+    public void accessTransformers(@DelegatesTo(value = AccessTransformers.class, strategy = Closure.DELEGATE_ONLY) Action<AccessTransformers> action) {
+        backend().configureList("accessTransformers", action, AccessTransformers.class, false);
     }
 
     @DslValidate
-    public static void validate(BackendMap map) {
+    public AccessTransformers getAccessTransformers() {
+        return backend().getOrCreateList("accessTransformers", AccessTransformers.class);
+    }
+
+    public void mixins(@DelegatesTo(value = Mixins.class, strategy = Closure.DELEGATE_ONLY) Action<Mixins> action) {
+        backend().configureList("mixins", action, Mixins.class, false);
+    }
+
+    @DslValidate("mixins")
+    public Mixins getMixins() {
+        return backend().getOrCreateList("mixins", Mixins.class);
+    }
+
+    @DslValidate
+    public static void validate(NeoForgeModsToml modsToml) {
+        var map = modsToml.backend();
         if (!(map.get("license") instanceof String)) {
             throw new IllegalStateException("Expected 'license' to be present and a String");
         }

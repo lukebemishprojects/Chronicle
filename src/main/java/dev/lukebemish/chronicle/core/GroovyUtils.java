@@ -9,20 +9,20 @@ import java.lang.reflect.Proxy;
 final class GroovyUtils {
     private GroovyUtils() {}
 
-    public static <T> void setDelegate(T value, Action<T> action) {
+    public static <T> Action<T> rehydrate(Action<T> action) {
         if (action instanceof Proxy proxy) {
             try {
                 var handler = Proxy.getInvocationHandler(proxy);
                 if (handler instanceof ConversionHandler conversionHandler) {
                     if (conversionHandler.getDelegate() instanceof Closure<?> closure) {
-                        closure.setDelegate(value);
-                        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+                        return adaptClosure(closure);
                     }
                 }
             } catch (IllegalArgumentException ignored) {
                 // Not a dynamic proxy, ignore
             }
         }
+        return action;
     }
 
     public static <T> @Nullable Action<T> tryAdaptClosure(@Nullable Object obj) {
@@ -34,9 +34,8 @@ final class GroovyUtils {
 
     public static <T> Action<T> adaptClosure(Closure<?> closure) {
         return t -> {
-            closure.setDelegate(t);
-            closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-            closure.call(t);
+            var rehydrated = closure.rehydrate(t, t, t);
+            rehydrated.call(t);
         };
     }
 }

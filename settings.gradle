@@ -8,6 +8,7 @@ pluginManagement {
     plugins {
         id 'org.jetbrains.kotlin.jvm' version '+'
     }
+    includeBuild "build-logic"
 }
 
 buildscript {
@@ -22,6 +23,7 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '+'
     id 'dev.lukebemish.managedversioning' version '+'
     id 'dev.lukebemish.conventions' version '+'
+    id 'build-logic'
 }
 
 gradle.lifecycle.beforeProject {p ->
@@ -30,7 +32,7 @@ gradle.lifecycle.beforeProject {p ->
             lockMode = LockMode.STRICT
             lockAllConfigurations()
             var cleanProjectName = (p.path + ":").replace(':', ' ').trim().replace(' ', '-')
-            lockFile.set file("locks/${cleanProjectName}buildscript-gradle.lockfile")
+            lockFile.set rootProject.file("locks/${cleanProjectName}${cleanProjectName.empty ? '' : '-'}buildscript-gradle.lockfile")
         }
     }
 }
@@ -54,3 +56,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'chronicle'
+
+include("plugin")
+project(":plugin").name = "chronicle-gradle-plugin"
+

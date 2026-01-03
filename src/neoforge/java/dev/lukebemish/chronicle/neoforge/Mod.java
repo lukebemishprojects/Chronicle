@@ -5,6 +5,7 @@ import dev.lukebemish.chronicle.core.BackendMap;
 import dev.lukebemish.chronicle.core.ChronicleMap;
 import dev.lukebemish.chronicle.core.DslValidate;
 import dev.lukebemish.chronicle.core.GenericChronicleMap;
+import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.jspecify.annotations.Nullable;
 
@@ -80,12 +81,22 @@ public class Mod extends ChronicleMap {
         backend().putAt("updateJSONURL", updateJSONURL);
     }
 
-    public void features(@DelegatesTo(value = Features.class, strategy = groovy.lang.Closure.DELEGATE_FIRST) Action<Features> action) {
-        backend().configure("features", action, Features.class);
+    public void features(@DelegatesTo(value = Features.class, strategy = Closure.DELEGATE_ONLY) Action<Features> action) {
+        backend().configure("features", action, Features.class, false);
     }
 
-    public void modProperties(@DelegatesTo(value = GenericChronicleMap.class, strategy = groovy.lang.Closure.DELEGATE_FIRST) Action<GenericChronicleMap> action) {
-        backend().configure("modproperties", action, GenericChronicleMap.class);
+    @DslValidate("features")
+    public Features getFeatures() {
+        return backend().getOrCreate("features", Features.class);
+    }
+
+    public void modProperties(@DelegatesTo(value = GenericChronicleMap.class, strategy = Closure.DELEGATE_ONLY) Action<GenericChronicleMap> action) {
+        backend().configure("modproperties", action, GenericChronicleMap.class, false);
+    }
+
+    @DslValidate("modproperties")
+    public GenericChronicleMap getModProperties() {
+        return backend().getOrCreate("modproperties", GenericChronicleMap.class);
     }
 
     public @Nullable String getModUrl() {
@@ -128,8 +139,13 @@ public class Mod extends ChronicleMap {
         backend().putAt("featureFlags", featureFlags);
     }
 
-    public void dependencies(@DelegatesTo(value = Dependencies.class, strategy = groovy.lang.Closure.DELEGATE_FIRST) Action<Dependencies> action) {
-        backend().configureList("dependencies", action, Dependencies.class);
+    public void dependencies(@DelegatesTo(value = Dependencies.class, strategy = Closure.DELEGATE_ONLY) Action<Dependencies> action) {
+        backend().configureList("dependencies", action, Dependencies.class, false);
+    }
+
+    @DslValidate("dependencies")
+    public Dependencies getDependencies() {
+        return backend().getOrCreateList("dependencies", Dependencies.class);
     }
 
     @DslValidate
@@ -154,7 +170,7 @@ public class Mod extends ChronicleMap {
             if (!(logoFile instanceof String logoString)) {
                 throw new IllegalStateException("Expected 'logoFile' to be a String if present");
             }
-            // TODO: is this predicate actually enforced anywhere in neo?
+            // TODO: is this predicate actually enforced anywhere in neo? Comes from the docs but may not be enforced.
             if (!LOGO_FILE.asMatchPredicate().test(logoString)) {
                 throw new IllegalStateException("Logo file name '" + logoString + "' is invalid; it must match the regex " + LOGO_FILE.pattern());
             }

@@ -65,16 +65,29 @@ public final class BackendList implements Iterable<Object> {
         values.set(i, Utils.backendify(value, context));
     }
 
-    public <T extends ChronicleMap> void add(Action<T> action, Class<T> viewClass) {
+    public <T extends ChronicleMap> void add(Action<T> action, Class<T> viewClass, boolean validate) {
         BackendMap backendMap = new BackendMap(this.context);
         var view = context.mapView(viewClass);
         T wrapped = view.wrap(backendMap);
         action.call(wrapped);
-        view.validate(backendMap);
+        if (validate) {
+            view.validate(wrapped);
+        }
         values.add(backendMap);
     }
 
-    public <T extends ChronicleMap> void configure(int index, Action<T> action, Class<T> viewClass) {
+    public <T extends ChronicleList> void addList(Action<T> action, Class<T> viewClass, boolean validate) {
+        BackendList backendList = new BackendList(this.context);
+        var view = context.listView(viewClass);
+        T wrapped = view.wrap(backendList);
+        action.call(wrapped);
+        if (validate) {
+            view.validate(wrapped);
+        }
+        values.add(backendList);
+    }
+
+    public <T extends ChronicleMap> void configure(int index, Action<T> action, Class<T> viewClass, boolean validate) {
         var existing = Utils.unwrap(get(index));
         BackendMap map;
         if (existing instanceof BackendMap existingMap) {
@@ -85,7 +98,49 @@ public final class BackendList implements Iterable<Object> {
         var view = context.mapView(viewClass);
         T wrapped = view.wrap(map);
         action.call(wrapped);
-        view.validate(map);
+        if (validate) {
+            view.validate(wrapped);
+        }
+    }
+
+    public <T extends ChronicleList> void configureList(int index, Action<T> action, Class<T> viewClass, boolean validate) {
+        var existing = Utils.unwrap(get(index));
+        BackendList list;
+        if (existing instanceof BackendList existingList) {
+            list = existingList;
+        } else {
+            throw new IllegalStateException("Cannot enter index " + index + " because it is already set to a non-list value");
+        }
+        var view = context.listView(viewClass);
+        T wrapped = view.wrap(list);
+        action.call(wrapped);
+        if (validate) {
+            view.validate(wrapped);
+        }
+    }
+
+    public <T extends ChronicleMap> T get(int index, Class<T> viewClass) {
+        var existing = Utils.unwrap(get(index));
+        BackendMap map;
+        if (existing instanceof BackendMap existingMap) {
+            map = existingMap;
+        } else {
+            throw new IllegalStateException("Cannot get index " + index + " because it is already set to a non-map value");
+        }
+        var view = context.mapView(viewClass);
+        return view.wrap(map);
+    }
+
+    public <T extends ChronicleList> T getList(int index, Class<T> viewClass) {
+        var existing = Utils.unwrap(get(index));
+        BackendList list;
+        if (existing instanceof BackendList existingList) {
+            list = existingList;
+        } else {
+            throw new IllegalStateException("Cannot get index " + index + " because it is already set to a non-list value");
+        }
+        var view = context.listView(viewClass);
+        return view.wrap(list);
     }
 
     @Override

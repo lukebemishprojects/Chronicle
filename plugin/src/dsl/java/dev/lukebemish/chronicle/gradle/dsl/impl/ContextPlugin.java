@@ -1,4 +1,4 @@
-package dev.lukebemish.chronicle.gradle.dsl;
+package dev.lukebemish.chronicle.gradle.dsl.impl;
 
 import dev.lukebemish.chronicle.core.ChronicleDsl;
 

@@ -64,7 +64,7 @@ final class Utils {
 
     static <T> void invokeAction(T value, Action<T> action) {
         if (isGroovyPresent()) {
-            GroovyUtils.setDelegate(value, action);
+            action = GroovyUtils.rehydrate(action);
         }
         action.invoke(value);
     }
