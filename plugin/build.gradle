@@ -1,7 +1,9 @@
 import build.RunGeneratorTask
+import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 
 plugins {
     id 'org.jetbrains.kotlin.jvm'
+    id 'com.gradle.plugin-publish'
     id 'java-library'
     id 'maven-publish'
     id 'groovy'
@@ -20,11 +22,28 @@ java {
     }
 }
 
+['apiElements', 'runtimeElements'].each {
+    configurations.named(it).configure {
+        attributes {
+            attribute(
+                GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
+                objects.named(GradlePluginApiVersion, libs.versions.gradle.get())
+            )
+        }
+    }
+}
+
 gradlePlugin {
+    website = 'https://github.com/lukebemishprojects/Chronicle'
+    vcsUrl = 'https://github.com/lukebemishprojects/Chronicle.git'
+
     plugins {
         register("chronicle") {
             id = "dev.lukebemish.chronicle"
             implementationClass = "dev.lukebemish.chronicle.gradle.ChroniclePlugin"
+            displayName = 'Chronicle'
+            description = 'A plugin with DSLs for generating mod metadata and mixin configs.'
+            tags.addAll(['neoforge', 'fabric'])
         }
     }
 }

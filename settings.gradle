@@ -6,7 +6,7 @@ pluginManagement {
         }
     }
     plugins {
-        id 'org.jetbrains.kotlin.jvm' version '+'
+        id 'com.gradle.plugin-publish' version '+'
     }
     includeBuild "build-logic"
 }
@@ -24,6 +24,12 @@ plugins {
     id 'dev.lukebemish.managedversioning' version '+'
     id 'dev.lukebemish.conventions' version '+'
     id 'build-logic'
+
+    // Since it needs to overload the one from managedversioning
+    id 'dev.lukebemish.central-portal-publishing' version '+' apply false
+
+    // Has a weird build-service related incompat with central-portal-publishing (FFS, _how_?) if you don't do this...
+    id 'org.jetbrains.kotlin.jvm' version '+' apply false
 }
 
 gradle.lifecycle.beforeProject {p ->
@@ -35,12 +41,106 @@ gradle.lifecycle.beforeProject {p ->
             lockFile.set rootProject.file("locks/${cleanProjectName}${cleanProjectName.empty ? '' : '-'}buildscript-gradle.lockfile")
         }
     }
+
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+
+    tasks.withType(Sign).configureEach {
+        // Gradle broke something in 8.8 here, and now you can't publish plugins to other mavens if signing is disabled...
+        enabled System.getenv('GPG_KEY') !== null
+    }
+
+    publishing {
+        publications.configureEach {
+            managedVersioning.sign(signing, it)
+        }
+    }
 }
 
 managedVersioning {
     versionFile.set file('version.properties')
     versionPRs()
     versionSnapshots()
+
+    publishing {
+        mavenStaging()
+        mavenSnapshot()
+        mavenPullRequest()
+        mavenCentralMakeBundle()
+    }
+
+    gitHubActions {
+        release {
+            prettyName = 'Release'
+            workflowDispatch = true
+            gradleJob {
+                javaVersion.set '21'
+                name.set 'build'
+                buildCache()
+                setupGitUser()
+                readOnly = false
+                gradlew 'Tag Release', 'tagRelease'
+                gradlew 'Build', 'build'
+                push()
+                recordVersion 'Record Version', 'version'
+                dependencySubmission()
+            }
+            gradleJob {
+                javaVersion.set '21'
+                name.set 'publishCentral'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish Central', 'publish'
+                tag.set('${{needs.build.outputs.version}}')
+                sign()
+                mavenCentral()
+                mavenStaging('github')
+            }
+            gradleJob {
+                javaVersion.set '21'
+                name.set 'publishPlugins'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish Plugins', 'publishPlugins'
+                tag.set('${{needs.build.outputs.version}}')
+                pluginPortal()
+            }
+        }
+        snapshot {
+            prettyName.set 'Snapshot'
+            workflowDispatch.set(true)
+            onBranches.add 'main'
+            gradleJob {
+                javaVersion.set '21'
+                name.set 'build'
+                buildCache()
+                cacheReadOnly = false
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                mavenSnapshot('github')
+            }
+        }
+        build_pr {
+            prettyName.set 'Build PR'
+            pullRequest.set(true)
+            gradleJob {
+                javaVersion.set '21'
+                name.set 'build'
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                pullRequestArtifact()
+            }
+        }
+        publish_pr {
+            prettyName.set 'Publish PR'
+            publishPullRequestAction(
+                'github',
+                "dev/lukebemish/chronicle,dev/lukebemish/chronicle/*",
+                'Build PR'
+            )
+        }
+    }
 }
 
 dependencyResolutionManagement {

@@ -130,6 +130,13 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             suppressAllPomMetadataWarnings()
+            managedVersioning.pom(it, github_repo, license)
+            pom {
+                name = 'Chronicle'
+                description = 'A tool for building extensible DSLs to describe structured data'
+            }
         }
     }
 }
+
+managedVersioning.mavenCentralUseBundle()
