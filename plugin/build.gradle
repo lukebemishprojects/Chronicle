@@ -18,7 +18,8 @@ java {
     withJavadocJar()
     registerFeature("dsl") {
         usingSourceSet(sourceSets.create("dsl"))
-        disablePublication()
+        withSourcesJar()
+        withJavadocJar()
     }
 }
 
@@ -53,14 +54,6 @@ configurations {
     resolvable("generatorClasspath") {
         extendsFrom(generator.get())
     }
-
-    def dsl = dependencyScope("dsl")
-    named("dslImplementation") {
-        extendsFrom(dsl.get())
-    }
-    named("api") {
-        extendsFrom(dsl.get())
-    }
 }
 
 def runDslGenerator = tasks.register('runDslGenerator', RunGeneratorTask) {
@@ -81,17 +74,17 @@ dependencies {
         }
     }
 
-    dsl(project(":")) {
+    dslApi(project(":")) {
         capabilities {
             requireFeature("fabric")
         }
     }
-    dsl(project(":")) {
+    dslApi(project(":")) {
         capabilities {
             requireFeature("neoforge")
         }
     }
-    dsl(project(":")) {
+    dslApi(project(":")) {
         capabilities {
             requireFeature("mixin")
         }
@@ -104,7 +97,7 @@ dependencies {
     dslCompileOnly(libs.kotlin.stdlib)
 
     compileOnly(files(runDslGenerator.flatMap { it.outputDirectory }))
-    implementation(project(project.path)) {
+    api(project(project.path)) {
         capabilities {
             requireFeature("dsl")
         }
