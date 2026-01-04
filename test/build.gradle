@@ -4,6 +4,7 @@ plugins {
 }
 
 chronicle.forSourceSet("main") {
+    final libs = libs
     mixins("examplemod.mixins.json") {
         minVersion = "0.8"
         packageName = "test.mixin"
@@ -24,7 +25,7 @@ chronicle.forSourceSet("main") {
         }
         license = "MIT"
         depends {
-            add("othermod", ">=1.0.0")
+            add("othermod", ">=${libs.versions.othermod.get()}")
         }
     }
     neoForge {
@@ -37,7 +38,7 @@ chronicle.forSourceSet("main") {
             authors = "Luke Bemish"
             dependencies.add {
                 modId = "othermod"
-                versionRange = "[1.0.0,)"
+                versionRange = "[${libs.versions.othermod.get()},)"
             }
         }
     }
